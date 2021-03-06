@@ -3,6 +3,38 @@ import chisel3.util._
 
 object Instructions {
 
+  /*
+   * Basiccaly, instruction formats are follwing cases:
+   *
+   * 1. OODDDSSS
+   * 2. OODDDOOO
+   * 3. OOOOOSSS
+   * 4. OORPOOOO
+   *
+   * O   : opcode
+   * DDD : Destination register
+   * SSS : Source register
+   *
+   *   DDD or SSS | register name
+   *   -----------+---------------
+   *    111       | A
+   *    000       | B
+   *    001       | C
+   *    010       | D
+   *    011       | E
+   *    100       | H
+   *    101       | L
+   *
+   * RP  : Register pair
+   *
+   *    RP  | register name
+   *   -----+---------------
+   *    00  | B-C
+   *    01  | D-E
+   *    10  | H-L
+   *    11  | SP
+   */
+
   // N  : Mem(PC+1)
   // NN : {Mem(PC+2), Mem(PC+1)}
   // Load
@@ -33,12 +65,40 @@ object Instructions {
   def POPRR    = BitPat("b11??0001") // Pop stack to RR.
 
   // Arithmetic
-  def ADDAR    = BitPat("b10000???") // Add A and R.
-  def ADDAN    = BitPat("b11000110") // Add A and N.
-  def ADDAHL   = BitPat("b10000110") // Add A and Mem(HL).
-  def ADCAR    = BitPat("b10001???") // Add A and R and Carry.
-  def ADCAN    = BitPat("b11001110") // Add A and N and Carry.
-  def ADCAHL   = BitPat("b10001110") // Add A and Mem(HL) and Carry.
+  // 8-bit
+  def ADDAR    = BitPat("b10000???") // Add A to R.
+  def ADDAN    = BitPat("b11000110") // Add A to N.
+  def ADDAHL   = BitPat("b10000110") // Add A to Mem(HL).
+  def ADCAR    = BitPat("b10001???") // Add A to R and Carry.
+  def ADCAN    = BitPat("b11001110") // Add A to N and Carry.
+  def ADCAHL   = BitPat("b10001110") // Add A to Mem(HL) and Carry.
+  def SUBAR    = BitPat("b10010???") // Sub A from R.
+  def SUBAN    = BitPat("b11010110") // Sub A from N.
+  def SUBAHL   = BitPat("b10010110") // Sub A from Mem(HL).
+  def SUCAR    = BitPat("b10011???") // Sub A from R and Carry.
+  def SUCAN    = BitPat("b11011110") // Sub A from N and Carry.
+  def SUCAHL   = BitPat("b10011110") // Sub A from Mem(HL) and Carry.
+  def ANDAR    = BitPat("b10100???") // AND A and R.
+  def ANDAN    = BitPat("b11100110") // AND A and N.
+  def ANDAHL   = BitPat("b10100110") // AND A and Mem(HL).
+  def XORAR    = BitPat("b10101???") // XOR A and R.
+  def XORAN    = BitPat("b11101110") // XOR A and N.
+  def XORAHL   = BitPat("b10101110") // XOR A and Mem(HL).
+  def ORAR     = BitPat("b10100???") // OR A and R.
+  def ORAN     = BitPat("b11110110") // OR A and N.
+  def ORAHL    = BitPat("b10100110") // OR A and Mem(HL).
+  def CPAR     = BitPat("b10101???") // Compare A and R.
+  def CPAN     = BitPat("b11111110") // Compare A and N.
+  def CPAHL    = BitPat("b10101110") // Compare A and Mem(HL).
+  def INCR     = BitPat("b00???100") // Increment R.
+  def INCHL    = BitPat("b00110100") // Increment Mem(HL).
+  def DECR     = BitPat("b00???101") // Decrement R.
+  def DECHL    = BitPat("b00110101") // Decrement Mem(HL).
+  def DAA      = BitPat("b00100111") // Decimal adjust accmulator.
+
+  // 16-bit
+  def ADDHLRR  = BitPat("b0???1001") // 16bit Add HL to RR.
+  def INCRR    = BitPat("b0???0100") // 16bit Add HL to RR.
 
   // Control
   def JPNN     = BitPat("b11000011") // Jump to NN.
@@ -63,7 +123,6 @@ object Instructions {
   def CCF      = BitPat("b00111111") // Flips C flag, clears N and H flags.
   def SCF      = BitPat("b00110111") // Sets C flag, clears N and H flags.
   def NOP      = BitPat("b00000000") // No-operation.
-  def DAA      = BitPat("b00100111") // Flips Z and C flags, clear H flag?
   def CPL      = BitPat("b00101111") // Flips A register, sets N and H flags.
 
 }
