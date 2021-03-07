@@ -57,12 +57,12 @@ object Instructions {
   def LDHLDA   = BitPat("b00110010") // Load from A to Mem(HL--).
   def LDAHLI   = BitPat("b00111010") // Load from Mem(HL++) to A.
   def LDHLIA   = BitPat("b00110010") // Load from A to Mem(HL++).
-  def LDRRNN   = BitPat("b00??0001") // Load from 16bit Mem(NN) to 16bit X.
+  def LDRPNN   = BitPat("b00??0001") // Load from 16bit Mem(NN) to 16bit X.
   def LDNNSP   = BitPat("b00001000") // Load from SP to 16bit Mem(NN).
   def LDSPHL   = BitPat("b11111001") // Load from HL to Mem(HL++).
   // Push/Pop
-  def PUSHRR   = BitPat("b11??0101") // Push RR to stack.
-  def POPRR    = BitPat("b11??0001") // Pop stack to RR.
+  def PUSHRP   = BitPat("b11??0101") // Push RP to stack.
+  def POPRP    = BitPat("b11??0001") // Pop stack to RP.
 
   // Arithmetic
   // 8-bit
@@ -97,8 +97,9 @@ object Instructions {
   def DAA      = BitPat("b00100111") // Decimal adjust accmulator.
 
   // 16-bit
-  def ADDHLRR  = BitPat("b0???1001") // 16bit Add HL to RR.
-  def INCRR    = BitPat("b0???0100") // 16bit Add HL to RR.
+  def ADDHLRP  = BitPat("b0???1001") // 16bit Add HL to RP.
+  def INCRP    = BitPat("b0???0100") // Increment RP.
+  def DECRP    = BitPat("b0???0100") // 16bit Add HL to RP.
 
   // Control
   def JPNN     = BitPat("b11000011") // Jump to NN.
