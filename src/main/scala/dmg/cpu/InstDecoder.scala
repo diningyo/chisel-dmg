@@ -99,7 +99,41 @@ object Instructions {
   // 16-bit
   def ADDHLRP  = BitPat("b0???1001") // 16bit Add HL to RP.
   def INCRP    = BitPat("b0???0100") // Increment RP.
-  def DECRP    = BitPat("b0???0100") // 16bit Add HL to RP.
+  def DECRP    = BitPat("b0???1010") // Decrement RP.
+  def ADDSPR8  = BitPat("b11101000") // Add SP to Singed 8-bit.
+  def LDHLSPR8 = BitPat("b11111000") // Load from SP + Singed 8-bit to HL.
+
+  // Rotate and Shift
+  def RLCA     = BitPat("b00001110") // Rotate accumlator left.
+  def RLA      = BitPat("b00011110") // Rotate accumlator left through carry.
+  def RRCA     = BitPat("b00001111") // Rotate accumlator right.
+  def RRA      = BitPat("b00011111") // Rotate accumlator right through carry.
+
+  // Prefixed commands
+  def PREFIXED = BitPat("b11001010") // This is a byte signiture for 16-bit commands.
+  def RLCR     = BitPat("b00000???") // Rotate left.
+  def RLCHL    = BitPat("b00000110") // Rotate left.
+  def RLR      = BitPat("b00010???") // Rotate left through carry.
+  def RLHL     = BitPat("b00010110") // Rotate left through carry.
+  def RRCR     = BitPat("b00001???") // Rotate left.
+  def RRCHL    = BitPat("b00001110") // Rotate left.
+  def RRR      = BitPat("b00011???") // Rotate left through carry.
+  def RRHL     = BitPat("b00011110") // Rotate left through carry.
+  def SLAR     = BitPat("b00100???") // Shift left arithmetic.
+  def SLAHL    = BitPat("b00100110") // Shift left arithmetic.
+  def SRAR     = BitPat("b00101???") // Shift right arithmetic.
+  def SRAHL    = BitPat("b00101110") // Shift right arithmetic.
+  def SWAPR    = BitPat("b00110???") // Exchange low/hi-nibble.
+  def SWAPHL   = BitPat("b00110110") // Exchange low/hi-nibble.
+  def SRLR     = BitPat("b00111???") // Shift right logical.
+  def SRLHL    = BitPat("b00111110") // Shift right logical.
+  // Single-bit - bit[5:3] = N / bit[2:0] = R
+  def BITR     = BitPat("b01??????") // Test bit n.
+  def BITHL    = BitPat("b01???110") // Test bit n.
+  def RESR     = BitPat("b10??????") // Reset bit n.
+  def RESHL    = BitPat("b10???110") // Reset bit n.
+  def SETR     = BitPat("b11??????") // Set bit n.
+  def SETHL    = BitPat("b11???110") // Set bit n.
 
   // Control
   def JPNN     = BitPat("b11000011") // Jump to NN.
