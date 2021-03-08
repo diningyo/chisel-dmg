@@ -159,14 +159,150 @@ object Instructions {
   def SCF      = BitPat("b00110111") // Sets C flag, clears N and H flags.
   def NOP      = BitPat("b00000000") // No-operation.
   def CPL      = BitPat("b00101111") // Flips A register, sets N and H flags.
-
 }
+
+class DecodedInst extends Bundle {
+  //val cycle =
+  val imm = Bool()
+  val rp = Bool()
+  val dst = UInt(3.W)
+  val src = UInt(3.W)
+}
+
 
 class InstDecoder extends Module {
   val io = IO(new Bundle {
-    val inst = UInt(8.W)
-    val opcode = UInt(2.W)
-    val src_reg = UInt(3.W)
-    val dst_reg = UInt(3.W)
+    val inst = Input(UInt(8.W))
+    val decoded = ValidIO(new DecodedInst)
   })
+
+  def decode(imm: Bool, rp: Bool, dst: UInt, src: UInt) = {
+    val d = Wire(new DecodedInst())
+    d.imm := imm
+    d.rp := rp
+    d.dst := dst
+    d.src := src
+
+    d
+  }
+
+  import Instructions._
+
+  //
+  val decode_table = Array(
+    LDRR     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDRN     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDRHL    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDHLR    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDHLN    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDABC    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDADE    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDBCA    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDDEA    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDANN    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDNNA    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDHAC    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDHCA    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDHAN    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDHNA    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDAHLD   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDHLDA   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDAHLI   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDHLIA   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDRPNN   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDNNSP   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDSPHL   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    PUSHRP   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    POPRP    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ADDAR    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ADDAN    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ADDAHL   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ADCAR    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ADCAN    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ADCAHL   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    SUBAR    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    SUBAN    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    SUBAHL   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    SUCAR    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    SUCAN    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    SUCAHL   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ANDAR    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ANDAN    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ANDAHL   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    XORAR    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    XORAN    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    XORAHL   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ORAR     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ORAN     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ORAHL    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    CPAR     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    CPAN     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    CPAHL    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    INCR     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    INCHL    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    DECR     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    DECHL    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    DAA      -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ADDHLRP  -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    INCRP    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    DECRP    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    ADDSPR8  -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    LDHLSPR8 -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    RLCA     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    RLA      -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    RRCA     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    RRA      -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    PREFIXED -> List(true.B,  decode(false.B, false.B, 0.U, 0.U)),
+    JPNN     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    JPHL     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    JPCCNN   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    JPCCE    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    JPE      -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    CALLNN   -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    CALLCCNN -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    RET      -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    RETCC    -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    RETI     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    RSTN     -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    DI       -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    EI       -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    CCF      -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    SCF      -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    NOP      -> List(false.B, decode(false.B, false.B, 0.U, 0.U)),
+    CPL      -> List(false.B, decode(false.B, false.B, 0.U, 0.U))
+  )
+
+  val ctrl = ListLookup(io.inst, List(true.B, decode(false.B, false.B, 0.U, 0.U)), decode_table)
+
+  val prefixed = RegNext(ctrl(0).asTypeOf(Bool()))
+
+  val prefixed_decode_table = Array(
+    RLCR     -> List(decode(false.B, false.B, 0.U, 0.U)),
+    RLCHL    -> List(decode(false.B, false.B, 0.U, 0.U)),
+    RLR      -> List(decode(false.B, false.B, 0.U, 0.U)),
+    RLHL     -> List(decode(false.B, false.B, 0.U, 0.U)),
+    RRCR     -> List(decode(false.B, false.B, 0.U, 0.U)),
+    RRCHL    -> List(decode(false.B, false.B, 0.U, 0.U)),
+    RRR      -> List(decode(false.B, false.B, 0.U, 0.U)),
+    RRHL     -> List(decode(false.B, false.B, 0.U, 0.U)),
+    SLAR     -> List(decode(false.B, false.B, 0.U, 0.U)),
+    SLAHL    -> List(decode(false.B, false.B, 0.U, 0.U)),
+    SRAR     -> List(decode(false.B, false.B, 0.U, 0.U)),
+    SRAHL    -> List(decode(false.B, false.B, 0.U, 0.U)),
+    SWAPR    -> List(decode(false.B, false.B, 0.U, 0.U)),
+    SWAPHL   -> List(decode(false.B, false.B, 0.U, 0.U)),
+    SRLR     -> List(decode(false.B, false.B, 0.U, 0.U)),
+    SRLHL    -> List(decode(false.B, false.B, 0.U, 0.U)),
+    BITR     -> List(decode(false.B, false.B, 0.U, 0.U)),
+    BITHL    -> List(decode(false.B, false.B, 0.U, 0.U)),
+    RESR     -> List(decode(false.B, false.B, 0.U, 0.U)),
+    RESHL    -> List(decode(false.B, false.B, 0.U, 0.U)),
+    SETR     -> List(decode(false.B, false.B, 0.U, 0.U)),
+    SETHL    -> List(decode(false.B, false.B, 0.U, 0.U)),
+  )
+
+  val prefixed_ctrl = ListLookup(io.inst, List(decode(false.B, false.B, 0.U, 0.U)), prefixed_decode_table)
+
+  io.decoded.valid := true.B
+  io.decoded.bits := Mux(prefixed, prefixed_ctrl(0), ctrl(1))
 }
