@@ -8,6 +8,20 @@ class MemIO extends Bundle {
   val rddata = Output(UInt(8.W))
 }
 
-class Mem extends Module {
+sealed trait MemType
+case object ChiselMem extends MemType
+case object Xilinx extends MemType
+
+class Mem(
+  val hex_path: String = "",
+  val mem_type: MemType = Xilinx,
+) extends Module {
+
   val io = IO(new MemIO())
+
+  mem_type match {
+    //case ChiselMem => true.B
+    case Xilinx => true.B
+      val mem = Module(new XilinxMem(hex_path))
+  }
 }

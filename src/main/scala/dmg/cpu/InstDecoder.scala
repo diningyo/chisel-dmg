@@ -175,15 +175,6 @@ object Instructions {
   def CPL      = BitPat("b00101111") // Flips A register, sets N and H flags.
 }
 
-class DecodedInst extends Bundle {
-  //val cycle =
-  val imm = Bool()
-  val rp = Bool()
-  val dst = UInt(3.W)
-  val src = UInt(3.W)
-}
-
-
 class InstDecoder extends Module {
   val io = IO(new Bundle {
     val inst = Input(UInt(8.W))
