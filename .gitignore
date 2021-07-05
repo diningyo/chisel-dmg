@@ -343,3 +343,6 @@ hs_err_pid*
 .metals/
 project/metals.sbt
 project/project/
+
+# Project specific
+src/test/scala/resources/blargg-gb-tests/
