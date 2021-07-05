@@ -4,7 +4,7 @@ set -ux
 dst_dir=blargg-gb-tests
 site_url=https://gbdev.gg8.se/files/roms/blargg-gb-tests
 blargg_gb_tests=(
-                 cbg_sound
+                 cgb_sound
                  cpu_instrs
                  dmg_sound
                  halt_bug
