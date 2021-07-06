@@ -1,19 +1,19 @@
 module xilinx_mem
   #(
-     parameter p_ADDR_BITS  = 16
-    ,parameter p_DATA_BITS  = 8
-    ,parameter p_MEM_ROW_NUM = 0
-    ,parameter p_INIT_HEX_FILE = "test.hex"
+    parameter p_ADDR_BITS     = 16,
+    parameter p_DATA_BITS     = 8,
+    parameter p_MEM_ROW_NUM   = 'h1000,
+    parameter p_INIT_HEX_FILE = ""
     )
   (
    // external
    input                        clk,
 
    // memory
-   input [p_ADDR_BITS-1:0]      addr
-   output reg [p_DATA_BITS-1:0] q
-   input                        ren
-   input                        wen
+   input [p_ADDR_BITS-1:0]      addr,
+   output reg [p_DATA_BITS-1:0] q,
+   input                        ren,
+   input                        wen,
    input [p_DATA_BITS-1:0]      data
    );
 
@@ -36,6 +36,7 @@ module xilinx_mem
 
     // write
     if (wen) begin
+      $display("write addr %x, %x", addr, data);
       mem[addr] <= data;
     end
   end
