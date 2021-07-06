@@ -64,6 +64,14 @@ object BlarggGbTests {
   )
 }
 
+class CpuTestTb(val test_rom: String) extends Module {
+
+  val io = IO(new Bundle {})
+
+  io := DontCare
+
+}
+
 class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
   behavior of "Cpu"
 
@@ -71,7 +79,7 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
 
   get_cpu_instrs_ind_tests().foreach { test_name =>
     it should f"be passed ${test_name} tests" in {
-      test(new Cpu) { c =>
+      test(new CpuTestTb(test_name)) { c =>
         fail()
       }
     }
