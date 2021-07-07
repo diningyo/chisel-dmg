@@ -1,8 +1,36 @@
 import chisel3._
 import chisel3.util._
+import chisel3.experimental.{IntParam, StringParam}
 
-class xilinx_mem(val hex_path: String)
-    extends BlackBox with HasBlackBoxResource {
+///**
+//  *
+//  * @param ramType RAM type.
+//  * @param numOfMemBytes number of Memory bytes.
+//  * @param dataBits Data bit width.
+//  * @param initHexFile File path of Hex data file for initializing memory.
+//  */
+//case class RAMParams
+//(
+//  ramType: RAMType,
+//  numOfMemBytes: Int,
+//  dataBits: Int,
+//  initHexFile: String = ""
+//) {
+//  require(dataBits % 8 == 0, "dataBits must be multiply of 8")
+//  val strbBits = dataBits / 8
+//  val addrBits = log2Ceil(numOfMemBytes / strbBits)
+//  val numOfMemRows = numOfMemBytes / strbBits // convert byte to number of row
+//  val portAParams = RAMIOParams(RAMRO, addrBits, dataBits, hasRddv = true)
+//  val portBParams = RAMIOParams(RAMRW, addrBits, dataBits, hasRddv = true)
+//}
+
+class xilinx_mem(val hexPath: String) extends BlackBox(
+  Map(
+    "p_ADDR_BITS" -> IntParam(16),
+    "p_DATA_BITS" -> IntParam(8),
+    "p_MEM_ROW_NUM" -> IntParam(0x10000),
+    "p_INIT_HEX_FILE" -> StringParam(hexPath)
+  )) with HasBlackBoxResource {
   val io = IO(new Bundle {
     // external
     val clk = Input(Clock())
