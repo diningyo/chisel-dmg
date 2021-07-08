@@ -23,6 +23,7 @@ module xilinx_mem
 
   initial begin
     if (p_INIT_HEX_FILE != "") begin
+      $display("Load: %s", p_INIT_HEX_FILE);
       $readmemh(p_INIT_HEX_FILE, mem);
     end
   end
