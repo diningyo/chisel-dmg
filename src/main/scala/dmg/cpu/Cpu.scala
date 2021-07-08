@@ -3,7 +3,7 @@ import chisel3.util._
 
 
 class CpuIO extends Bundle {
-  val mem = Flipped(new MemIO())
+  val mem = new MemIO()
 }
 
 class Cpu extends Module {
