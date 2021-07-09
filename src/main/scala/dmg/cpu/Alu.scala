@@ -14,7 +14,6 @@ class DecodedInst extends Bundle {
 
 class Alu extends Module {
   val io = IO(new Bundle {
-    val inst = Input(UInt(8.W))
     val decoded = ValidIO(new DecodedInst)
   })
 }
