@@ -31,6 +31,7 @@ convertBin2Hex := {
   import java.io.File
   import java.nio.file.{Files, Paths}
   import scala.util.matching.Regex
+  import scala.sys.process._
 
   val path = "src/test/resources/cpu"
   val fileList = (new File(path)).listFiles()
@@ -44,8 +45,26 @@ convertBin2Hex := {
       case _: IndexOutOfBoundsException => None
     }
 
-    if (extenstion.getOrElse("") == ".gb") true else false
+    if (extenstion.getOrElse("") == ".s") true else false
   }.foreach { testSourcefile =>
+    // build test ROM code
+    val workDir = testSourcefile.getParent
+    val romObjPath = s"${workDir}/test.o"
+
+    val romObj = new File(romObjPath)
+
+    if (romObj.exists == true) {
+      println(s"${romObj.getPath} is exists, so remove it")
+      romObj.delete
+    }
+
+    println(s"output = ${romObjPath}")
+    val wlaBuildResult = s"wla-gb -o ${romObjPath} ${testSourcefile}" !!
+
+    val linkFilePath = s"${workDir}/linkfile"
+    val gbFilePath = s"${workDir}/test.gb"
+    val wlaLinkResult = s"wlalink -d -v -S ${linkFilePath} ${gbFilePath}" !!
+
     println(testSourcefile)
     val testSourcePath = testSourcefile.getPath()
     val byteArray = Files.readAllBytes(Paths.get(testSourcePath))
