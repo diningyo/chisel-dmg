@@ -59,16 +59,15 @@ convertBin2Hex := {
     }
 
     println(s"output = ${romObjPath}")
-    val wlaBuildResult = s"wla-gb -o ${romObjPath} ${testSourcefile}" !!
+    val wlaBuildResult = s"wla-gb -o ${romObjPath} ${testSourcefile.getPath}" !!
 
     val linkFilePath = s"${workDir}/linkfile"
-    val gbFilePath = s"${workDir}/test.gb"
+    val gbFilePath = s"${workDir}/${testSourcefile.getName}.gb"
     val wlaLinkResult = s"wlalink -d -v -S ${linkFilePath} ${gbFilePath}" !!
 
     println(testSourcefile)
-    val testSourcePath = testSourcefile.getPath()
-    val byteArray = Files.readAllBytes(Paths.get(testSourcePath))
-    val outPath = testSourcePath + ".hex"
+    val byteArray = Files.readAllBytes(Paths.get(gbFilePath))
+    val outPath = gbFilePath + ".hex"
     val pw = new PrintWriter(outPath)
 
     byteArray.zipWithIndex.foreach {
