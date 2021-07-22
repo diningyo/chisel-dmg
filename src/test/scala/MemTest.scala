@@ -7,15 +7,6 @@ import chiseltest._
 import chiseltest.internal.VerilatorBackendAnnotation
 import chiseltest.experimental.TestOptionBuilder._
 
-//class MemTestTb(val testRom: String) extends Module {
-//
-//  val io = IO(Flipped(new MemIO))
-//
-//  val dut = Module(new Mem(hexPath = testRom, memType = Xilinx))
-//
-//  io <> dut.io
-//}
-
 class MemTest extends FlatSpec with ChiselScalatestTester with Matchers {
   behavior of "Mem"
 

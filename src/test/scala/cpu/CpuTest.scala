@@ -103,6 +103,7 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
         while(c.io.finish.peek() != true.B) {
           c.clock.step(1)
         }
+        fail()
       }
     }
   }

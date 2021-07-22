@@ -21,6 +21,8 @@ class Mem(
 
   val io = IO(Flipped(new MemIO()))
 
+  io := DontCare
+
   memType match {
     case ChiselMem => true.B
     case Xilinx =>
