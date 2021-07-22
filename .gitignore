@@ -346,3 +346,7 @@ project/project/
 
 # Project specific
 src/test/scala/resources/blargg-gb-tests/
+src/test/scala/resources/cpu/*.gb
+src/test/scala/resources/cpu/*.gb.hex
+src/test/scala/resources/cpu/*.sym
+src/test/scala/resources/cpu/test.o

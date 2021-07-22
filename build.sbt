@@ -58,18 +58,22 @@ convertBin2Hex := {
       romObj.delete
     }
 
-    println(s"output = ${romObjPath}")
+    // compile
     val wlaBuildResult = s"wla-gb -o ${romObjPath} ${testSourcefile.getPath}" !!
 
+    // link
     val linkFilePath = s"${workDir}/linkfile"
     val gbFilePath = s"${workDir}/${testSourcefile.getName}.gb"
+    println(s"link = ${linkFilePath}")
+    println(s"gbFilePath = ${gbFilePath}")
     val wlaLinkResult = s"wlalink -d -v -S ${linkFilePath} ${gbFilePath}" !!
 
-    println(testSourcefile)
+    // convert binary to hex
     val byteArray = Files.readAllBytes(Paths.get(gbFilePath))
     val outPath = gbFilePath + ".hex"
     val pw = new PrintWriter(outPath)
 
+    println(s"hexFilePath = ${outPath}")
     byteArray.zipWithIndex.foreach {
       case (i, idx) => {
         val sep = if ((idx % 0x10) == 0xf) "\n" else " "
