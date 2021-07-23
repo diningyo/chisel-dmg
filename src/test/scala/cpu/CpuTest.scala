@@ -1,9 +1,12 @@
 import chisel3._
+import chisel3.util.experimental.BoringUtils
 
 import org.scalatest._
 import chiseltest._
 import chiseltest.internal.VerilatorBackendAnnotation
 import chiseltest.experimental.TestOptionBuilder._
+
+
 
 object BlarggGbTests {
 
@@ -76,15 +79,22 @@ class CpuTestTb(val testRom: String) extends Module {
     val finish = Output(Bool())
     val is_success = Output(Bool())
     val timeout = Output(Bool())
+    val regs = Output(new Reg())
   })
 
   io := DontCare
 
   val mem = Module(new Mem(testRom))
 
-  val dut_cpu = Module(new Cpu())
+  val dut_cpu = Module(new Cpu)
 
   dut_cpu.io.mem <> mem.io
+
+
+  val w_regs = WireDefault(0.U.asTypeOf(new Reg))
+  BoringUtils.bore(dut_cpu.r_regs, Seq(w_regs))
+
+  io.regs := w_regs
 }
 
 class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
@@ -95,16 +105,77 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
 
   import BlarggGbTests._
 
-  get_cpu_instrs_ind_tests().foreach { test_name =>
-    it should f"be passed ${test_name} tests" in {
-      test(new CpuTestTb(test_name)).withAnnotations(annos) { c =>
-        c.clock.setTimeout(10)
-        //println(s"finish = ${c.io.finish.peek()}")
-        while(c.io.finish.peek() != true.B) {
-          c.clock.step(1)
-        }
-        fail()
-      }
+  def compareReg(
+    a: Int, b: Int, c: Int, d: Int, e: Int,
+    h: Int, l: Int, sp: Int, pc: Int,
+    f_z: Boolean, f_n: Boolean, f_h: Boolean, f_c: Boolean
+  )(implicit dut: CpuTestTb): Unit = {
+    println(s"reg = ${dut.io.regs.peek}")
+
+    dut.io.regs.a.expect(a.U)
+    dut.io.regs.b.expect(b.U)
+    dut.io.regs.c.expect(c.U)
+    dut.io.regs.d.expect(d.U)
+    dut.io.regs.e.expect(e.U)
+    dut.io.regs.h.expect(h.U)
+    dut.io.regs.l.expect(l.U)
+    dut.io.regs.sp.expect(sp.U)
+    dut.io.regs.pc.expect(pc.U)
+
+    // flagはとりあえず各ビット単位で比較
+    dut.io.regs.f.z.expect(f_z.B)
+    dut.io.regs.f.n.expect(f_n.B)
+    dut.io.regs.f.h.expect(f_h.B)
+    dut.io.regs.f.c.expect(f_c.B)
+  }
+
+  val testName = "01_ld.s"
+  it should f"be passed ${testName} tests" in {
+    val testHexFilePath = s"src/test/resources/cpu/${testName}.gb.hex"
+    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
+
+      implicit val dut = c
+      c.clock.setTimeout(10)
+
+      // 1cycleごとに期待値を比較していく
+      // NOTE: 初期値どうしよう。。bgbの値に合わせても良いのかも。
+      compareReg(0, 0, 0, 0, 0, 0, 0, 0, 0x100, false, false, false, false)
+      c.clock.step(1)
+      // ld a, $a5                  ; a = $a5
+      // ld a, imm -> need 2 cycles
+      //            a    b    c    d    e    h    l   sp    pc    f_z    f_n    f_h    f_c
+      compareReg(0xa5,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x100, false, false, false, false)
+      c.clock.step(2)
+	    // ld b, a
+      compareReg(0xa5,0xa5,0x00,0x00,0x00,0x00,0x00,0x00,0x102, false, false, false, false)
+      c.clock.step(1)
+	    // ld c, b
+      compareReg(0xa5,0xa5,0xa5,0x00,0x00,0x00,0x00,0x00,0x100, false, false, false, false)
+      c.clock.step(1)
+	    // ld d, c
+      compareReg(0xa5,0xa5,0xa5,0xa5,0x00,0x00,0x00,0x00,0x100, false, false, false, false)
+      c.clock.step(1)
+	    // ld e, d
+      compareReg(0xa5,0xa5,0xa5,0xa5,0xa5,0x00,0x00,0x00,0x100, false, false, false, false)
+      c.clock.step(1)
+	    // ld l, e
+      compareReg(0xa5,0xa5,0xa5,0xa5,0xa5,0x00,0x00,0x00,0x100, false, false, false, false)
+      c.clock.step(1)
+	    // ld e, l
+      compareReg(0xa5,0xa5,0xa5,0xa5,0xa5,0x00,0x00,0x00,0x100, false, false, false, false)
     }
   }
+
+  //get_cpu_instrs_ind_tests().foreach { test_name =>
+  //  it should f"be passed ${test_name} tests" in {
+  //    test(new CpuTestTb(test_name)).withAnnotations(annos) { c =>
+  //      c.clock.setTimeout(10)
+  //
+  //      // 1cycleごとに期待値を比較していく
+  //
+  //
+  //    }
+  //  }
+  //}
+
 }
