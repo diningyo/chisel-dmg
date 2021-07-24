@@ -79,7 +79,7 @@ class CpuTestTb(val testRom: String) extends Module {
     val finish = Output(Bool())
     val is_success = Output(Bool())
     val timeout = Output(Bool())
-    val regs = Output(new Reg())
+    val regs = Output(new CpuReg)
   })
 
   io := DontCare
@@ -91,7 +91,7 @@ class CpuTestTb(val testRom: String) extends Module {
   dut_cpu.io.mem <> mem.io
 
 
-  val w_regs = WireDefault(0.U.asTypeOf(new Reg))
+  val w_regs = WireDefault(0.U.asTypeOf(new CpuReg))
   BoringUtils.bore(dut_cpu.r_regs, Seq(w_regs))
 
   io.regs := w_regs
@@ -112,15 +112,15 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
   )(implicit dut: CpuTestTb): Unit = {
     println(s"reg = ${dut.io.regs.peek}")
 
-    dut.io.regs.a.expect(a.U)
-    dut.io.regs.b.expect(b.U)
-    dut.io.regs.c.expect(c.U)
-    dut.io.regs.d.expect(d.U)
-    dut.io.regs.e.expect(e.U)
-    dut.io.regs.h.expect(h.U)
-    dut.io.regs.l.expect(l.U)
-    dut.io.regs.sp.expect(sp.U)
-    dut.io.regs.pc.expect(pc.U)
+    dut.io.regs.a.read.expect(a.U)
+    dut.io.regs.b.read.expect(b.U)
+    dut.io.regs.c.read.expect(c.U)
+    dut.io.regs.d.read.expect(d.U)
+    dut.io.regs.e.read.expect(e.U)
+    dut.io.regs.h.read.expect(h.U)
+    dut.io.regs.l.read.expect(l.U)
+    dut.io.regs.sp.read.expect(sp.U)
+    dut.io.regs.pc.read.expect(pc.U)
 
     // flagはとりあえず各ビット単位で比較
     dut.io.regs.f.z.expect(f_z.B)
@@ -137,32 +137,42 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
       implicit val dut = c
       c.clock.setTimeout(10)
 
+      compareReg(0, 0, 0, 0, 0, 0, 0, 0, 0x100, false, false, false, false)
+      c.clock.step(100)
       // 1cycleごとに期待値を比較していく
       // NOTE: 初期値どうしよう。。bgbの値に合わせても良いのかも。
-      compareReg(0, 0, 0, 0, 0, 0, 0, 0, 0x100, false, false, false, false)
-      c.clock.step(1)
       // ld a, $a5                  ; a = $a5
       // ld a, imm -> need 2 cycles
-      //            a    b    c    d    e    h    l   sp    pc    f_z    f_n    f_h    f_c
-      compareReg(0xa5,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x100, false, false, false, false)
-      c.clock.step(2)
+      //            a     b     c     d     e     h     l    sp     pc    f_z    f_n    f_h    f_c
+      compareReg(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x101, false, false, false, false)
+      c.clock.step(1)
+      compareReg(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x102, false, false, false, false)
+      c.clock.step(1)
+      compareReg(0xa5, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x103, false, false, false, false)
+      c.clock.step(1)
+
 	    // ld b, a
-      compareReg(0xa5,0xa5,0x00,0x00,0x00,0x00,0x00,0x00,0x102, false, false, false, false)
+      compareReg(0xa5, 0xa5, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x102, false, false, false, false)
       c.clock.step(1)
+
 	    // ld c, b
-      compareReg(0xa5,0xa5,0xa5,0x00,0x00,0x00,0x00,0x00,0x100, false, false, false, false)
+      compareReg(0xa5, 0xa5, 0xa5, 0x00, 0x00, 0x00, 0x00, 0x00, 0x100, false, false, false, false)
       c.clock.step(1)
+
 	    // ld d, c
-      compareReg(0xa5,0xa5,0xa5,0xa5,0x00,0x00,0x00,0x00,0x100, false, false, false, false)
+      compareReg(0xa5, 0xa5, 0xa5, 0xa5, 0x00, 0x00, 0x00, 0x00, 0x100, false, false, false, false)
       c.clock.step(1)
+
 	    // ld e, d
-      compareReg(0xa5,0xa5,0xa5,0xa5,0xa5,0x00,0x00,0x00,0x100, false, false, false, false)
+      compareReg(0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0x00, 0x00, 0x00, 0x100, false, false, false, false)
       c.clock.step(1)
+
 	    // ld l, e
-      compareReg(0xa5,0xa5,0xa5,0xa5,0xa5,0x00,0x00,0x00,0x100, false, false, false, false)
+      compareReg(0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0x00, 0x00, 0x00, 0x100, false, false, false, false)
       c.clock.step(1)
+
 	    // ld e, l
-      compareReg(0xa5,0xa5,0xa5,0xa5,0xa5,0x00,0x00,0x00,0x100, false, false, false, false)
+      compareReg(0xa5, 0xa5, 0xa5, 0xa5, 0xa5, 0x00, 0x00, 0x00, 0x100, false, false, false, false)
     }
   }
 
