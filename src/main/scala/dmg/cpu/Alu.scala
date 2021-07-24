@@ -4,9 +4,10 @@ import chisel3.util._
 import Chisel.chiselMain
 
 class DecodedInst extends Bundle {
-  //val cycle =
-  val imm = Bool()
-  val rp = Bool()
+  val cycle = UInt(3.W)
+  val is_prefixed = Bool()
+  val is_imm = Bool()
+  val is_rp = Bool()
   val dst = UInt(3.W)
   val src = UInt(3.W)
 }

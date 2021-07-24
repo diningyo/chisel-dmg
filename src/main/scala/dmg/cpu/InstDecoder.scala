@@ -183,8 +183,8 @@ class InstDecoder extends Module {
 
   def decode(imm: Bool, rp: Bool, dst: UInt, src: UInt) = {
     val d = Wire(new DecodedInst())
-    d.imm := imm
-    d.rp := rp
+    d.is_imm := imm
+    d.is_rp := rp
     d.dst := dst
     d.src := src
 
@@ -199,6 +199,7 @@ class InstDecoder extends Module {
 
   //
   val decode_table = Array(
+    // OP    ->      cycle,          is_imm,    is_rp,     dst,     src
     LDRR     -> List(false.B, decode(false.B, false.B, dst_reg, src_reg)),
     LDRN     -> List(false.B, decode(true.B,  false.B, dst_reg, src_reg)),
     LDRHL    -> List(false.B, decode(false.B, false.B, dst_reg, src_reg)),
