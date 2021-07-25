@@ -345,8 +345,8 @@ project/metals.sbt
 project/project/
 
 # Project specific
-src/test/scala/resources/blargg-gb-tests/
-src/test/scala/resources/cpu/*.gb
-src/test/scala/resources/cpu/*.gb.hex
-src/test/scala/resources/cpu/*.sym
-src/test/scala/resources/cpu/test.o
+src/test/resources/blargg-gb-tests/
+src/test/resources/cpu/*.gb
+src/test/resources/cpu/*.gb.hex
+src/test/resources/cpu/*.sym
+src/test/resources/cpu/test.o
