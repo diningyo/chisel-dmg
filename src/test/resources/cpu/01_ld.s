@@ -13,5 +13,5 @@
 	  ld c, b
 	  ld d, c
 	  ld e, d
-	  ld l, e
-	  ld e, l
+	  ld h, e
+	  ld l, h

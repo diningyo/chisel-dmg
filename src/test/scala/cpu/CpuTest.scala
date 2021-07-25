@@ -129,16 +129,16 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
     dut.io.regs.f.c.expect(f_c.B)
   }
 
-  val testName = "01_ld.s"
-  it should f"be passed ${testName} tests" in {
-    val testHexFilePath = s"src/test/resources/cpu/${testName}.gb.hex"
+  it should f"be passed 01_ld.s test" in {
+    val testHexFilePath = s"src/test/resources/cpu/01_ld.s.gb.hex"
     test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
 
       implicit val dut = c
-      c.clock.setTimeout(10)
+      c.clock.setTimeout(100)
 
       compareReg(0, 0, 0, 0, 0, 0, 0, 0, 0x100, false, false, false, false)
-      c.clock.step(100)
+      c.clock.step(1)
+
       // 1cycleごとに期待値を比較していく
       // NOTE: 初期値どうしよう。。bgbの値に合わせても良いのかも。
       // ld a, $a5                  ; a = $a5
