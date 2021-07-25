@@ -1,6 +1,8 @@
 import chisel3._
 import chisel3.stage._
 import chisel3.util._
+import chisel3.experimental.ChiselEnum
+
 import Chisel.chiselMain
 
 object Instructions {
@@ -173,6 +175,17 @@ object Instructions {
   def SCF      = BitPat("b00110111") // Sets C flag, clears N and H flags.
   def NOP      = BitPat("b00000000") // No-operation.
   def CPL      = BitPat("b00101111") // Flips A register, sets N and H flags.
+}
+
+object OP extends ChiselEnum {
+  val LD = Value
+  val PUSH, POP = Value
+  val ADD, ADC, SUB, SUC, AND, XOR, OR, CP, INC, DEC, DAA, CPL = Value
+  val PREFIXED = Value
+  val RLCA, RLA, RRCA, RRA, RLC, RL, RRC, RR, SLA, SWAP, SRA, SRL = Value
+  val BIT, SET, RES = Value
+  val CCF, SCF, NOP, HALT, STOP, DI, EI = Value
+  val JP, JR, CALL, RET, RETI, RST = Value
 }
 
 class InstDecoder extends Module {
