@@ -26,15 +26,17 @@ class GP(bits: Int) extends BaseCpuReg {
   def read(): UInt = data
 
   override def cloneType: this.type = new GP(bits).asInstanceOf[this.type]
+  override def toString(): String = f"0x${data.litValue()}%02x"
 }
 
 class PC(bits: Int) extends GP(bits) {
   def inc: Unit = data := data + 1.U
 
   override def cloneType: this.type = new PC(bits).asInstanceOf[this.type]
+  override def toString(): String = f"0x${data.litValue()}%04x"
 }
 
-class F extends Bundle with BaseCpuReg {
+class F extends BaseCpuReg {
   val z = Bool()
   val n = Bool()
   val h = Bool()
@@ -49,6 +51,11 @@ class F extends Bundle with BaseCpuReg {
   def read(): UInt = Cat(z, n, h, c, 0.U(4.W))
 
   override def cloneType: this.type = new F().asInstanceOf[this.type]
+
+  override def toString(): String = {
+    val reg = z.litValue << 7 | n.litValue << 6 | h.litValue << 5 | c.litValue << 4
+    f"0x${reg}%02x{z:${z.litValue}/n:${n.litValue}/h:${h.litValue}/c:${c.litValue}}"
+  }
 }
 
 class CpuReg extends Bundle {
@@ -130,6 +137,13 @@ class CpuReg extends Bundle {
         is (L) { l.write(wrdata(7, 0)) }
       }
     }
+  }
+
+  val regList = Seq("a" -> a)
+
+  override def toString(): String = {
+    //regList.foldLeft("") { (s, r) =>  s + s"${r._1}:${r._2.toString}" }
+    s"""|a:${a.toString}/b:${b.toString}/c:${c.toString}/d:${d.toString}/e:${e.toString}/h:${h.toString}/l:${l.toString}/sp:${sp.toString}/pc:${pc.toString}/f:${f.toString}""".stripMargin
   }
 }
 
