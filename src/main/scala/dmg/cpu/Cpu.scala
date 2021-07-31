@@ -25,8 +25,11 @@ class GP(bits: Int) extends BaseCpuReg {
   def write(wr_val: UInt): Unit = data := wr_val
   def read(): UInt = data
 
+  val printWidth = bits / 4;
+  val printStr = s"0x%0${printWidth}x"
+
   override def cloneType: this.type = new GP(bits).asInstanceOf[this.type]
-  override def toString(): String = f"0x${data.litValue()}%02x"
+  override def toString(): String = printStr.format(data.litValue())
 }
 
 class PC(bits: Int) extends GP(bits) {
