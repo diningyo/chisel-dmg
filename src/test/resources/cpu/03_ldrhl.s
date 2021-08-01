@@ -21,7 +21,7 @@
 	  ld e, (hl)                  ; hl = $1024 / e = $05
     ld l, $25
 	  ld h, (hl)                  ; hl = $1025 / h = $20
-    ld l, $20                   ; l  = $26
+    ld l, $20                   ; l  = $20
 	  ld l, (hl)                  ; hl = $2020 / l = $ff
 
   .org $1020
