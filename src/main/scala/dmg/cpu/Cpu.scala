@@ -160,9 +160,6 @@ class Cpu extends Module {
   w_reg_init_val.pc.data := 0x100.U
   val r_regs = RegInit(w_reg_init_val)
 
-  // increment PC.
-  r_regs.pc.inc
-
   // decode
 
   import Instructions._
@@ -173,11 +170,16 @@ class Cpu extends Module {
   val src_reg = op_code(2, 0)
   val rp      = op_code(5, 4)
 
-  def decode(op: EnumType, cycle: UInt, is_prefixed: Bool, is_imm: Bool, is_rp: Bool, dst: UInt, src: UInt) = {
+  def decode(
+    op: OP.Type, cycle: UInt,
+    is_prefixed: Bool, is_imm: Bool, is_mem: Bool, is_rp: Bool,
+    dst: UInt, src: UInt) = {
     val d = Wire(new DecodedInst())
+    d.op := op
     d.cycle := cycle
     d.is_prefixed := is_prefixed
     d.is_imm := is_imm
+    d.is_mem := is_mem
     d.is_rp := is_rp
     d.dst := dst
     d.src := src
@@ -186,142 +188,152 @@ class Cpu extends Module {
   }
 
   val decode_table = Array(
-    LDRN     -> List(decode(OP.LD, 2.U, false.B, true.B,  false.B, dst_reg, src_reg)),
-    LDRR     -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDRHL    -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDHLR    -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDHLN    -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDABC    -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDADE    -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDBCA    -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDDEA    -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDANN    -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDNNA    -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDHAC    -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDHCA    -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDHAN    -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDHNA    -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDAHLD   -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDHLDA   -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDAHLI   -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDHLIA   -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDRPNN   -> List(decode(OP.LD, 1.U, false.B, false.B, true.B,  rp,      src_reg)),
-    LDNNSP   -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    LDSPHL   -> List(decode(OP.LD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    PUSHRP   -> List(decode(OP.PUSH, 1.U, false.B, false.B, true.B,  dst_reg, rp)),
-    POPRP    -> List(decode(OP.POP, 1.U, false.B, false.B, true.B,  rp,      src_reg)),
-    ADDAR    -> List(decode(OP.ADD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    ADDAN    -> List(decode(OP.ADD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    ADDAHL   -> List(decode(OP.ADD, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    ADCAR    -> List(decode(OP.ADC, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    ADCAN    -> List(decode(OP.ADC, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    ADCAHL   -> List(decode(OP.ADC, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    SUBAR    -> List(decode(OP.SUB, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    SUBAN    -> List(decode(OP.SUB, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    SUBAHL   -> List(decode(OP.SUB, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    SUCAR    -> List(decode(OP.SUC, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    SUCAN    -> List(decode(OP.SUC, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    SUCAHL   -> List(decode(OP.SUC, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    ANDAR    -> List(decode(OP.AND, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    ANDAN    -> List(decode(OP.AND, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    ANDAHL   -> List(decode(OP.AND, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    XORAR    -> List(decode(OP.XOR, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    XORAN    -> List(decode(OP.XOR, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    XORAHL   -> List(decode(OP.XOR, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    ORAR     -> List(decode(OP.OR, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    ORAN     -> List(decode(OP.OR, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    ORAHL    -> List(decode(OP.OR, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    CPAR     -> List(decode(OP.CP, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    CPAN     -> List(decode(OP.CP, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    CPAHL    -> List(decode(OP.CP, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    INCR     -> List(decode(OP.INC, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    INCHL    -> List(decode(OP.INC, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    DECR     -> List(decode(OP.DEC, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    DECHL    -> List(decode(OP.DEC, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    DAA      -> List(decode(OP.DAA, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    ADDHLRP  -> List(decode(OP.ADD, 1.U, false.B, false.B, true.B,  rp,      src_reg)),
-    INCRP    -> List(decode(OP.INC, 1.U, false.B, false.B, true.B,  rp,      src_reg)),
-    DECRP    -> List(decode(OP.DEC, 1.U, false.B, false.B, true.B,  rp,      src_reg)),
-    ADDSPR8  -> List(decode(OP.ADD, 1.U, false.B, false.B, true.B,  SP,      src_reg)),
-    LDHLSPR8 -> List(decode(OP.LD, 1.U, false.B, false.B, true.B,  SP,      src_reg)),
-    RLCA     -> List(decode(OP.RLCA, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    RLA      -> List(decode(OP.RLA, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    RRCA     -> List(decode(OP.RRCA, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    RRA      -> List(decode(OP.RRA, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    PREFIXED -> List(decode(OP.PREFIXED, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    JPNN     -> List(decode(OP.JP, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    JPHL     -> List(decode(OP.JP, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    JPCCNN   -> List(decode(OP.JP, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    JPCCE    -> List(decode(OP.JP, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    JPE      -> List(decode(OP.JP, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    CALLNN   -> List(decode(OP.CALL, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    CALLCCNN -> List(decode(OP.CALL, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    RET      -> List(decode(OP.RET, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    RETCC    -> List(decode(OP.RET, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    RETI     -> List(decode(OP.RET, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    RSTN     -> List(decode(OP.RST, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    DI       -> List(decode(OP.DI, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    EI       -> List(decode(OP.EI, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    CCF      -> List(decode(OP.CCF, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    SCF      -> List(decode(OP.SCF, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    //NOP      -> List(decode(OP.NOP, 1.U, false.B, false.B, false.B, dst_reg, src_reg)),
-    CPL      -> List(decode(OP.CPL, 1.U, false.B, false.B, false.B, dst_reg, src_reg))
+                //             op,     cycle,     pre,     imm,     mem,      rp,     dst,     src
+    LDRN     -> List(decode(OP.LD,       2.U, false.B, true.B,  false.B, false.B, dst_reg, src_reg)),
+    LDRHL    -> List(decode(OP.LD,       2.U, false.B, false.B, true.B,  false.B, dst_reg, src_reg)),
+    LDRR     -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDHLR    -> List(decode(OP.STORE,    1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDHLN    -> List(decode(OP.STORE,    1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDARP    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, true.B,  dst_reg, src_reg)),
+    LDBCA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDDEA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDANN    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDNNA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDHAC    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDHCA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDHAN    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDHNA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDAHLD   -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDHLDA   -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDAHLI   -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDHLIA   -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDRPNN   -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, true.B,  rp,      src_reg)),
+    LDNNSP   -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    LDSPHL   -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    PUSHRP   -> List(decode(OP.PUSH,     1.U, false.B, false.B, false.B, true.B,  dst_reg, rp)),
+    POPRP    -> List(decode(OP.POP,      1.U, false.B, false.B, false.B, true.B,  rp,      src_reg)),
+    ADDAR    -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    ADDAN    -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    ADDAHL   -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    ADCAR    -> List(decode(OP.ADC,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    ADCAN    -> List(decode(OP.ADC,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    ADCAHL   -> List(decode(OP.ADC,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    SUBAR    -> List(decode(OP.SUB,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    SUBAN    -> List(decode(OP.SUB,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    SUBAHL   -> List(decode(OP.SUB,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    SUCAR    -> List(decode(OP.SUC,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    SUCAN    -> List(decode(OP.SUC,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    SUCAHL   -> List(decode(OP.SUC,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    ANDAR    -> List(decode(OP.AND,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    ANDAN    -> List(decode(OP.AND,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    ANDAHL   -> List(decode(OP.AND,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    XORAR    -> List(decode(OP.XOR,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    XORAN    -> List(decode(OP.XOR,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    XORAHL   -> List(decode(OP.XOR,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    ORAR     -> List(decode(OP.OR,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    ORAN     -> List(decode(OP.OR,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    ORAHL    -> List(decode(OP.OR,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    CPAR     -> List(decode(OP.CP,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    CPAN     -> List(decode(OP.CP,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    CPAHL    -> List(decode(OP.CP,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    INCR     -> List(decode(OP.INC,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    INCHL    -> List(decode(OP.INC,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    DECR     -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    DECHL    -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    DAA      -> List(decode(OP.DAA,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    ADDHLRP  -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, true.B,  rp,      src_reg)),
+    INCRP    -> List(decode(OP.INC,      1.U, false.B, false.B, false.B, true.B,  rp,      src_reg)),
+    DECRP    -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, true.B,  rp,      src_reg)),
+    ADDSPR8  -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, true.B,  SP,      src_reg)),
+    LDHLSPR8 -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, true.B,  SP,      src_reg)),
+    RLCA     -> List(decode(OP.RLCA,     1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    RLA      -> List(decode(OP.RLA,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    RRCA     -> List(decode(OP.RRCA,     1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    RRA      -> List(decode(OP.RRA,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    PREFIXED -> List(decode(OP.PREFIXED, 1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    JPNN     -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    JPHL     -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    JPCCNN   -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    JPCCE    -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    JPE      -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    CALLNN   -> List(decode(OP.CALL,     1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    CALLCCNN -> List(decode(OP.CALL,     1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    RET      -> List(decode(OP.RET,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    RETCC    -> List(decode(OP.RET,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    RETI     -> List(decode(OP.RET,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    RSTN     -> List(decode(OP.RST,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    DI       -> List(decode(OP.DI,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    EI       -> List(decode(OP.EI,       1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    CCF      -> List(decode(OP.CCF,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    SCF      -> List(decode(OP.SCF,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
+    CPL      -> List(decode(OP.CPL,      1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg))
   )
 
   val valid = Wire(Bool())
-  val ctrl = ListLookup(op_code, List(decode(OP.NOP, 1.U, false.B, false.B, false.B, dst_reg, src_reg)), decode_table)
+  val ctrl = ListLookup(op_code, List(decode(OP.NOP, 1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)), decode_table)
 
   val mcyc_counter = RegInit(0.U(3.W))
-  valid := (mcyc_counter =/= 1.U)
+  valid := (mcyc_counter =/= 0.U)
   val r_ctrl = Reg(new DecodedInst)
 
-  when (ctrl(0).cycle =/= 0.U) {
+  op_code := Mux(valid, 0.U, io.mem.rddata)
+
+  // increment PC.
+  when (!ctrl(0).is_mem) {
+    r_regs.pc.inc
+  }
+
+  when (!valid && ctrl(0).cycle =/= 0.U) {
     mcyc_counter := ctrl(0).cycle - 1.U
     r_ctrl := ctrl(0)
+  }.elsewhen (valid) {
+    mcyc_counter := mcyc_counter - 1.U
   }
 
   val prefixed_valid = RegNext(valid)
 
   val prefixed_decode_table = Array(
-    RLCR     -> List(decode(OP.RLC, 1.U, false.B, false.B, false.B, A, src_reg)),
-    RLCHL    -> List(decode(OP.RLC, 1.U, false.B, false.B, false.B, A, src_reg)),
-    RLR      -> List(decode(OP.RL, 1.U, false.B, false.B, false.B, A, src_reg)),
-    RLHL     -> List(decode(OP.RL, 1.U, false.B, false.B, false.B, A, src_reg)),
-    RRCR     -> List(decode(OP.RRC, 1.U, false.B, false.B, false.B, A, src_reg)),
-    RRCHL    -> List(decode(OP.RRC, 1.U, false.B, false.B, false.B, A, src_reg)),
-    RRR      -> List(decode(OP.RR, 1.U, false.B, false.B, false.B, A, src_reg)),
-    RRHL     -> List(decode(OP.RR, 1.U, false.B, false.B, false.B, A, src_reg)),
-    SLAR     -> List(decode(OP.SLA, 1.U, false.B, false.B, false.B, A, src_reg)),
-    SLAHL    -> List(decode(OP.SLA, 1.U, false.B, false.B, false.B, A, src_reg)),
-    SRAR     -> List(decode(OP.SRA, 1.U, false.B, false.B, false.B, A, src_reg)),
-    SRAHL    -> List(decode(OP.SRA, 1.U, false.B, false.B, false.B, A, src_reg)),
-    SWAPR    -> List(decode(OP.SWAP, 1.U, false.B, false.B, false.B, A, src_reg)),
-    SWAPHL   -> List(decode(OP.SWAP, 1.U, false.B, false.B, false.B, A, src_reg)),
-    SRLR     -> List(decode(OP.SRL, 1.U, false.B, false.B, false.B, A, src_reg)),
-    SRLHL    -> List(decode(OP.SRL, 1.U, false.B, false.B, false.B, A, src_reg)),
-    BITR     -> List(decode(OP.BIT, 1.U, false.B, false.B, false.B, A, src_reg)),
-    BITHL    -> List(decode(OP.BIT, 1.U, false.B, false.B, false.B, A, src_reg)),
-    RESR     -> List(decode(OP.RES, 1.U, false.B, false.B, false.B, A, src_reg)),
-    RESHL    -> List(decode(OP.RES, 1.U, false.B, false.B, false.B, A, src_reg)),
-    SETR     -> List(decode(OP.SET, 1.U, false.B, false.B, false.B, A, src_reg)),
-    SETHL    -> List(decode(OP.SET, 1.U, false.B, false.B, false.B, A, src_reg)),
+    RLCR     -> List(decode(OP.RLC,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    RLCHL    -> List(decode(OP.RLC,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    RLR      -> List(decode(OP.RL,   1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    RLHL     -> List(decode(OP.RL,   1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    RRCR     -> List(decode(OP.RRC,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    RRCHL    -> List(decode(OP.RRC,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    RRR      -> List(decode(OP.RR,   1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    RRHL     -> List(decode(OP.RR,   1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    SLAR     -> List(decode(OP.SLA,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    SLAHL    -> List(decode(OP.SLA,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    SRAR     -> List(decode(OP.SRA,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    SRAHL    -> List(decode(OP.SRA,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    SWAPR    -> List(decode(OP.SWAP, 1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    SWAPHL   -> List(decode(OP.SWAP, 1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    SRLR     -> List(decode(OP.SRL,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    SRLHL    -> List(decode(OP.SRL,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    BITR     -> List(decode(OP.BIT,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    BITHL    -> List(decode(OP.BIT,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    RESR     -> List(decode(OP.RES,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    RESHL    -> List(decode(OP.RES,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    SETR     -> List(decode(OP.SET,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
+    SETHL    -> List(decode(OP.SET,  1.U, false.B, false.B, false.B, false.B, A, src_reg)),
   )
 
-  val prefixed_ctrl = ListLookup(op_code, List(decode(OP.NOP, 1.U, false.B, false.B, false.B, dst_reg, src_reg)), prefixed_decode_table)
-
+  val prefixed_ctrl = ListLookup(op_code, List(decode(OP.NOP, 1.U, false.B, false.B, false.B, false.B, dst_reg, src_reg)), prefixed_decode_table)
 
   val w_wrbk = Wire(UInt(16.W))
 
-  w_wrbk := Mux(ctrl(0).cycle === 1.U,
-    Mux(r_ctrl.is_imm, io.mem.rddata, r_regs.read(r_ctrl.is_rp, r_ctrl.src)),
+  w_wrbk := Mux(valid, Mux(r_ctrl.is_imm || r_ctrl.is_mem, io.mem.rddata, r_regs.read(r_ctrl.is_rp, r_ctrl.src)),
     r_regs.read(ctrl(0).is_rp, ctrl(0).src)
     )
 
   // reg writeback
-  when ((ctrl(0).cycle === 1.U) || (mcyc_counter === 1.U) && r_ctrl.is_imm) {
+  when ((!valid && (ctrl(0).cycle === 1.U))) {
+    when (ctrl(0).op === OP.LD) {
+      r_regs.write(ctrl(0).is_rp, ctrl(0).dst, w_wrbk)
+    }
+  }.elsewhen((mcyc_counter === 1.U) && (r_ctrl.is_imm || r_ctrl.is_mem)) {
     r_regs.write(r_ctrl.is_rp, r_ctrl.dst, w_wrbk)
   }
 
-  io.mem.addr := r_regs.pc.data
+  io.mem.addr := Mux(ctrl(0).is_mem, r_regs.read_hl, r_regs.pc.read)
   io.mem.wen := false.B
 }

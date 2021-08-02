@@ -178,7 +178,7 @@ object Instructions {
 }
 
 object OP extends ChiselEnum {
-  val LD = Value
+  val LD, STORE = Value
   val PUSH, POP = Value
   val ADD, ADC, SUB, SUC, AND, XOR, OR, CP, INC, DEC, DAA, CPL = Value
   val PREFIXED = Value
@@ -186,6 +186,17 @@ object OP extends ChiselEnum {
   val BIT, SET, RES = Value
   val CCF, SCF, NOP, HALT, STOP, DI, EI = Value
   val JP, JR, CALL, RET, RETI, RST = Value
+}
+
+class DecodedInst extends Bundle {
+  val op = OP()
+  val cycle = UInt(3.W)
+  val is_prefixed = Bool()
+  val is_imm = Bool()
+  val is_mem = Bool()
+  val is_rp = Bool()
+  val dst = UInt(3.W)
+  val src = UInt(3.W)
 }
 
 class InstDecoder extends Module {
