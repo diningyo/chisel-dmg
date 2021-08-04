@@ -17,9 +17,9 @@
     ld h, $01                   ; h  = $01
 	  ld l, $ff                   ; l  = $ff
 	  ld a, (hl+)                 ; a  = (hl = $01ff) = $03 -> hl = $0200
-    ld h, $03                   ; d  = $02
-	  ld l, $00                   ; e  = $00
-	  ld a, (hl-)                 ; a  = (hl = $0200) = $03 -> hl = $01ff
+    ld h, $03                   ; h  = $02
+	  ld l, $00                   ; l  = $00
+	  ld a, (hl-)                 ; a  = (hl = $0200) = $03 -> hl = $02ff
 
   ;; exp for ld a, (hl+)
   .org $1ff
