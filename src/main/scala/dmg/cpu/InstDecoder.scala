@@ -61,8 +61,8 @@ object Instructions {
   def LDHLN    = BitPat("b01110110") // Load from N to Mem(HL).
   def LDABC    = BitPat("b00001010") // Load from MEM(BC) to A.
   def LDADE    = BitPat("b00011010") // Load from MEM(DE) to A.
-  def LDAHLD   = BitPat("b00101010") // Load from Mem(HL--) to A.
-  def LDAHLI   = BitPat("b00111010") // Load from Mem(HL++) to A.
+  def LDAHLI   = BitPat("b00101010") // Load from Mem(HL++) to A.
+  def LDAHLD   = BitPat("b00111010") // Load from Mem(HL--) to A.
   def LDBCA    = BitPat("b00000010") // Load from A to MEM(BC).
   def LDDEA    = BitPat("b00010010") // Load from A to MEM(DE).
   def LDANN    = BitPat("b11111010") // Load from 16bit Mem(NN) to A.
@@ -178,7 +178,7 @@ object Instructions {
 }
 
 object OP extends ChiselEnum {
-  val LD, STORE = Value
+  val LD, LDINC, LDDEC, STORE, STOREINC, STOREDEC = Value
   val PUSH, POP = Value
   val ADD, ADC, SUB, SUC, AND, XOR, OR, CP, INC, DEC, DAA, CPL = Value
   val PREFIXED = Value

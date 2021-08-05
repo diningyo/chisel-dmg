@@ -197,8 +197,8 @@ class Cpu extends Module {
     LDHLN    -> List(decode(OP.STORE,    1.U, false.B, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
     LDABC    -> List(decode(OP.LD,       2.U, false.B, false.B, true.B,  false.B,  true.B, A,       BC)), // BC/DEはまとめられる？？
     LDADE    -> List(decode(OP.LD,       2.U, false.B, false.B, true.B,  false.B,  true.B, A,       DE)),
-    LDAHLD   -> List(decode(OP.LD,       2.U, false.B, false.B, true.B,  false.B,  true.B, A,       HL)),
-    LDAHLI   -> List(decode(OP.LD,       2.U, false.B, false.B, true.B,  false.B,  true.B, A,       HL)),
+    LDAHLI   -> List(decode(OP.LDINC,    2.U, false.B, false.B, true.B,  false.B,  true.B, A,       HL)),
+    LDAHLD   -> List(decode(OP.LDDEC,    2.U, false.B, false.B, true.B,  false.B,  true.B, A,       HL)),
     LDBCA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
     LDDEA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
     LDANN    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, dst_reg, src_reg)),
@@ -321,16 +321,39 @@ class Cpu extends Module {
 
   val prefixed_ctrl = ListLookup(op_code, List(decode(OP.NOP, 1.U, false.B, false.B, false.B, false.B, false.B, dst_reg, src_reg)), prefixed_decode_table)
 
+  // ALU
+
+
+
+
   val w_wrbk = Wire(UInt(16.W))
 
-  w_wrbk := Mux(valid, Mux(r_ctrl.is_imm || r_ctrl.is_mem, io.mem.rddata, r_regs.read(r_ctrl.is_src_rp, r_ctrl.src)),
-    r_regs.read(ctrl(0).is_src_rp, ctrl(0).src)
-    )
+  when (valid) {
+    when (r_ctrl.op === OP.LD) {
+      when (r_ctrl.is_imm || r_ctrl.is_mem) {
+        w_wrbk := io.mem.rddata
+      }.otherwise {
+        w_wrbk := r_regs.read(r_ctrl.is_src_rp, r_ctrl.src)
+      }
+    }.otherwise {
+      w_wrbk := io.mem.rddata
+    }
+  }.otherwise {
+    // 1-cycle instruction
+    w_wrbk := r_regs.read(ctrl(0).is_src_rp, ctrl(0).src)
+  }
 
   // reg writeback
   when ((!valid && (ctrl(0).cycle === 1.U))) {
     when (ctrl(0).op === OP.LD) {
       r_regs.write(ctrl(0).is_dst_rp, ctrl(0).dst, w_wrbk)
+    }
+  }.elsewhen(ctrl(0).cycle === 2.U) {
+    when (ctrl(0).op === OP.LDINC || ctrl(0).op === OP.STOREINC) {
+      printf("here: HL = %x", r_regs.read_hl)
+      r_regs.write_hl(r_regs.read_hl + 1.U)
+    }.elsewhen(ctrl(0).op === OP.LDDEC || ctrl(0).op === OP.STOREDEC) {
+      r_regs.write_hl(r_regs.read_hl - 1.U)
     }
   }.elsewhen((mcyc_counter === 1.U) && (r_ctrl.is_imm || r_ctrl.is_mem)) {
     r_regs.write(r_ctrl.is_dst_rp, r_ctrl.dst, w_wrbk)
