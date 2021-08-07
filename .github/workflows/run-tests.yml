@@ -31,9 +31,10 @@ jobs:
           tar xf v4.210.tar.gz
           cd verilator-4.210
           autoconf
-          ./configure --prefix=$(PWD)/../tools
+          ./configure --prefix=/home/runner/tools
           make -j 2
-          sudo make install
+          make install
+          export PATH=/home/runner/tools/bin:$PATH
           verilator --version
 
       - name: Install sbt
