@@ -44,7 +44,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
-            ~/wla-dx
+            ~/wla-dx-10.0
             ~/tools/wla-dx
           key: ${{ runner.os }}-wla-dx
 
@@ -52,8 +52,8 @@ jobs:
         if: steps.cache-wla-dx.outputs.cache-hit != 'true'
         run: |
         sudo apt install cmake
-        git clone https://github.com/vhelin/wla-dx
-        cd wla-dx
+        wget https://github.com/vhelin/wla-dx/archive/refs/tags/v10.0.tar.gz
+        cd wla-dx-10.0
         git checkout -b v10.0 refs/tags/v10.0
         mkdir build && cd build # Create building directory
         cmake .. -DCMAKE_INSTALL_PREFIX=/home/runner/tools/wla-dx
