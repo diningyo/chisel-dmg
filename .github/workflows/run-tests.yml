@@ -8,20 +8,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Cache verilator dependancy
-        id: cache-verilator-dependancy
+      - name: Cache verilator
+        id: cache-verilator
         uses: actions/cache@v2
         with:
           path: |
-            /usr/bin/ccache
-            /usr/include/FlexLexer.h
-            /usr/lib/x86_64-linux-gnu/libfl.*
-            /usr/lib/x86_64-linux-gnu/libl.*
-            /usr/lib/x86_64-linux-gnu/pkgconfig/libfl.pc
-            /etc/zlibc.conf
-            /lib/uncompress.so
-          key: ${{ runner.os }}-verilator-dependancy
+            ~/verilator-4.210
+            ~/verilator/
+          key: ${{ runner.os }}-verilator
 
       - name: Install Verilator Dependancy
         if: steps.cache-verilator-dependancy.outputs.cache-hit != 'true'
@@ -30,17 +24,6 @@ jobs:
           sudo apt-get install libfl2 libfl-dev
           sudo apt-get install zlibc zlib1g zlib1g-dev
 
-      - name: Cache verilator
-        id: cache-verilator
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/verilator-4.210
-            /usr/local/bin
-            /usr/local/include
-            /usr/local/lib
-          key: ${{ runner.os }}-verilator
-
       - name: Build verilator
         if: steps.cache-verilator.outputs.cache-hit != 'true'
         run: |
@@ -48,7 +31,7 @@ jobs:
           tar xf v4.210.tar.gz
           cd verilator-4.210
           autoconf
-          ./configure
+          ./configure --prefix=$(PWD)/../tools
           make -j 2
           sudo make install
           verilator --version
