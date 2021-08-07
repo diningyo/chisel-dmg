@@ -17,6 +17,7 @@ jobs:
           wget https://github.com/verilator/verilator/archive/refs/tags/v4.210.tar.gz
           tar xf v4.210.tar.gz
           cd verilator-4.210
+          autoconf
           ./configure
           make -j 2
           sudo make install
