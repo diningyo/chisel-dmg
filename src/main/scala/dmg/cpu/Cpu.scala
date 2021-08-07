@@ -322,9 +322,11 @@ class Cpu extends Module {
   val prefixed_ctrl = ListLookup(op_code, List(decode(OP.NOP, 1.U, false.B, false.B, false.B, false.B, false.B, dst_reg, src_reg)), prefixed_decode_table)
 
   // ALU
-
-
-
+  val alu_result = Wire(UInt(17.W))
+  alu_result := 0.U
+  when (ctrl(0).op === OP.ADD) {
+    alu_result := r_regs.a.read() + r_regs.read(ctrl(0).is_src_rp, src_reg)
+  }
 
   val w_wrbk = Wire(UInt(16.W))
 
@@ -347,6 +349,8 @@ class Cpu extends Module {
   when ((!valid && (ctrl(0).cycle === 1.U))) {
     when (ctrl(0).op === OP.LD) {
       r_regs.write(ctrl(0).is_dst_rp, ctrl(0).dst, w_wrbk)
+    }.elsewhen (ctrl(0).op === OP.ADD) {
+      r_regs.a.write(alu_result)
     }
   }.elsewhen(ctrl(0).cycle === 2.U) {
     when (ctrl(0).op === OP.LDINC || ctrl(0).op === OP.STOREINC) {
@@ -357,6 +361,18 @@ class Cpu extends Module {
     }
   }.elsewhen((mcyc_counter === 1.U) && (r_ctrl.is_imm || r_ctrl.is_mem)) {
     r_regs.write(r_ctrl.is_dst_rp, r_ctrl.dst, w_wrbk)
+  }
+
+  // flag reg update
+  val zero = (Mux(ctrl(0).is_dst_rp, alu_result, alu_result(7, 0)) === 0.U)
+  val carry = Mux(ctrl(0).is_dst_rp, alu_result(16), alu_result(8))
+  // Hald Carryの16bitの時の扱いを確認
+  val half_carry = Mux(ctrl(0).is_dst_rp, alu_result(8), alu_result(4))
+  when (ctrl(0).op === OP.ADD) {
+    r_regs.f.z := zero
+    r_regs.f.h := false.B
+    r_regs.f.h := half_carry
+    r_regs.f.c := carry
   }
 
   val addr = MuxCase(0.U, Seq(
