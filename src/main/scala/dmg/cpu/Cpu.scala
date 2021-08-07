@@ -190,7 +190,7 @@ class Cpu extends Module {
   val decodeTable = Array(
              //                op,     cycle,     pre,     imm,     mem,  dst_rp,  src_rp,       dst,       src
     LDRN     -> List(decode(OP.LD,       2.U, false.B, true.B,  false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    LDRHL    -> List(decode(OP.LD,       2.U, false.B, false.B, true.B,  false.B, false.B, w_dst_reg, w_src_reg)),
+    LDRHL    -> List(decode(OP.LDRHL,    2.U, false.B, false.B, true.B,  false.B, false.B, w_dst_reg, w_src_reg)),
     LDRR     -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDHLR    -> List(decode(OP.STORE,    1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDHLN    -> List(decode(OP.STORE,    1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -380,12 +380,14 @@ class Cpu extends Module {
     r_regs.f.c := w_carry
   }
 
-  val addr = MuxCase(0.U, Seq(
-    (w_ctrl.src === BC) -> r_regs.read_bc,
-    (w_ctrl.src === DE) -> r_regs.read_de,
-    (w_ctrl.src === HL) -> r_regs.read_hl,
-  ))
+  val w_addr = WireInit(0.U(16.W))
 
-  io.mem.addr := Mux(w_ctrl.is_mem, addr, r_regs.pc.read)
+  when (w_ctrl.op === OP.LDRHL) {
+    w_addr := r_regs.read_hl
+  }.otherwise {
+    w_addr := r_regs.read(true.B, w_ctrl.src)
+  }
+
+  io.mem.addr := Mux(w_ctrl.is_mem, w_addr, r_regs.pc.read)
   io.mem.wen := false.B
 }

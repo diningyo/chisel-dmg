@@ -25,7 +25,7 @@ object Inst03LDRHL extends FlatSpec with ChiselScalatestTester with TestUtil {
 
 	  // ld l, $21
     compareReg(0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x20, 0x00, 0x0105, false, false, false, false) // m3 / m1
-    dut.clock.step(2)
+    dut.clock.step(1)
     compareReg(0x01, 0x00, 0x00, 0x00, 0x00, 0x10, 0x20, 0x00, 0x0106, false, false, false, false) // m2
     dut.clock.step(1)
 
