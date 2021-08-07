@@ -71,6 +71,7 @@ jobs:
 
       - name: Run test
         run: |
+           sudo apt-get ccache
            export PATH=/home/runner/tools/verilator/bin:/home/runner/tools/wla-dx/bin:$PATH
            echo "DUMMY RUN"
            sbt "compile"
