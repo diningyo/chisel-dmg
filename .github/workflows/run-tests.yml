@@ -69,7 +69,7 @@ jobs:
           sudo apt-get install sbt
 
       - name: Run test
-        run:
+        run: |
            export PATH=/home/runner/tools/verilator/bin:/home/runner/tools/wla-dx/bin:$PATH
            echo "DUMMY RUN"
            sbt "testOnly convertBin2Hex"
