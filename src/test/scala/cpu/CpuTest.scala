@@ -133,4 +133,11 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
       Inst04LDARP(c)
     }
   }
+
+  it should f"be passed 10_addar.s test" in {
+    val testHexFilePath = s"src/test/resources/cpu/10_addar.s.gb.hex"
+    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
+      Inst10ADDAR(c)
+    }
+  }
 }
