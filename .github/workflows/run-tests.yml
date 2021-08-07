@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v2
       - name: Cache SBT
         uses: actions/cache@v2
         with:
@@ -69,7 +70,6 @@ jobs:
           sudo apt-get install sbt
 
       - name: Run test
-        uses: actions/checkout@v2
         run: |
            export PATH=/home/runner/tools/verilator/bin:/home/runner/tools/wla-dx/bin:$PATH
            echo "DUMMY RUN"
