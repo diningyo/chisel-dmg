@@ -72,5 +72,5 @@ jobs:
         run: |
            export PATH=/home/runner/tools/verilator/bin:/home/runner/tools/wla-dx/bin:$PATH
            echo "DUMMY RUN"
-           sbt "testOnly convertBin2Hex"
-#          sbt "testOnly CpuTest"
+           sbt "convertBin2Hex"
+           sbt "testOnly CpuTest"
