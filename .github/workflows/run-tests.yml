@@ -21,6 +21,7 @@ jobs:
             /usr/lib/x86_64-linux-gnu/pkgconfig/libfl.pc
             /etc/zlibc.conf
             /lib/uncompress.so
+          key: ${{ runner.os }}-verilator-dependancy
 
       - name: Install Dependancy
         if: steps.cache-verilator-dependancy.outputs.cache-hit != 'true'
