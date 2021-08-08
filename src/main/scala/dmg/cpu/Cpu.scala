@@ -328,11 +328,19 @@ class Cpu extends Module {
 
   // ALU
   val w_alu_result = Wire(UInt(17.W))
+  val w_half_alu_result = Wire(UInt(5.W))
   val w_alu_op2 = r_regs.read(w_ctrl.is_src_rp, w_src_reg)
   w_alu_result := 0.U
+  w_half_alu_result := 0.U
   switch (w_ctrl.op) {
-    is (OP.ADD) { w_alu_result := r_regs.a.read() + w_alu_op2 }
-    is (OP.SUB) { w_alu_result := r_regs.a.read() - w_alu_op2 }
+    is (OP.ADD) {
+      w_alu_result := r_regs.a.read() + w_alu_op2
+      w_half_alu_result := r_regs.a.read()(3, 0) +& w_alu_op2(3, 0)
+    }
+    is (OP.SUB) {
+      w_alu_result := r_regs.a.read() - w_alu_op2
+      w_half_alu_result := r_regs.a.read()(3, 0) -& w_alu_op2(3, 0)
+    }
   }
 
   val w_wrbk = Wire(UInt(16.W))
@@ -374,7 +382,15 @@ class Cpu extends Module {
   val w_zero = (Mux(w_ctrl.is_dst_rp, w_alu_result, w_alu_result(7, 0)) === 0.U)
   val w_carry = Mux(w_ctrl.is_dst_rp, w_alu_result(16), w_alu_result(8))
   // Hald Carryの16bitの時の扱いを確認
-  val w_half_carry = Mux(w_ctrl.is_dst_rp, w_alu_result(8), r_regs.a.data(4) =/= w_alu_result(4))
+  val w_half_carry = Wire(Bool())
+
+  when (w_ctrl.is_dst_rp) {
+    w_half_carry := w_alu_result(8)
+  }.otherwise {
+    // FIXME: 仕様を完全に把握してから最適化
+    w_half_carry := w_half_alu_result(4)
+  }
+
   when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB) {
     r_regs.f.z := w_zero
     r_regs.f.n := Mux(w_ctrl.op === OP.SUB, true.B, false.B)
