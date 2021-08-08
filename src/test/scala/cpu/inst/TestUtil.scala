@@ -5,7 +5,8 @@ trait TestUtil {
   def compareReg(
     a: Int, b: Int, c: Int, d: Int, e: Int,
     h: Int, l: Int, sp: Int, pc: Int,
-    f_z: Boolean, f_n: Boolean, f_h: Boolean, f_c: Boolean
+    f_z: Boolean, f_n: Boolean, f_h: Boolean, f_c: Boolean,
+    cycles: Int = 1
   )(implicit dut: CpuTestTb): Unit = {
     println(s"${dut.io.regs.peek}")
 
@@ -24,5 +25,7 @@ trait TestUtil {
     dut.io.regs.f.n.expect(f_n.B)
     dut.io.regs.f.h.expect(f_h.B)
     dut.io.regs.f.c.expect(f_c.B)
+
+    dut.clock.step(cycles)
   }
 }
