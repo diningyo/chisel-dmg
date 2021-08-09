@@ -341,6 +341,9 @@ class Cpu extends Module {
       w_alu_result := r_regs.a.read() - w_alu_op2
       w_half_alu_result := r_regs.a.read()(3, 0) -& w_alu_op2(3, 0)
     }
+    is (OP.AND) {
+      w_alu_result := r_regs.a.read() & w_alu_op2
+    }
   }
 
   val w_wrbk = Wire(UInt(16.W))
@@ -364,12 +367,11 @@ class Cpu extends Module {
   when ((!w_valid && (w_ctrl.cycle === 1.U))) {
     when (w_ctrl.op === OP.LD) {
       r_regs.write(w_ctrl.is_dst_rp, w_ctrl.dst, w_wrbk)
-    }.elsewhen (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB) {
+    }.elsewhen (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND) {
       r_regs.a.write(w_alu_result)
     }
   }.elsewhen(w_ctrl.cycle === 2.U) {
     when (w_ctrl.op === OP.LDINC || w_ctrl.op === OP.STOREINC) {
-      printf("here: HL = %x", r_regs.read_hl)
       r_regs.write_hl(r_regs.read_hl + 1.U)
     }.elsewhen(w_ctrl.op === OP.LDDEC || w_ctrl.op === OP.STOREDEC) {
       r_regs.write_hl(r_regs.read_hl - 1.U)
@@ -388,12 +390,26 @@ class Cpu extends Module {
     w_half_carry := w_alu_result(8)
   }.otherwise {
     // FIXME: 仕様を完全に把握してから最適化
-    w_half_carry := w_half_alu_result(4)
+    when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB) {
+      w_half_carry := w_half_alu_result(4)
+    }.elsewhen (w_ctrl.op === OP.AND) {
+      w_half_carry := true.B
+    }.otherwise {
+      w_half_carry := false.B
+    }
   }
 
-  when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB) {
+  val w_n = WireInit(false.B)
+
+  when (w_ctrl.op === OP.SUB) {
+    w_n := true.B
+  }.otherwise {
+    w_n := false.B
+  }
+
+  when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND) {
     r_regs.f.z := w_zero
-    r_regs.f.n := Mux(w_ctrl.op === OP.SUB, true.B, false.B)
+    r_regs.f.n := w_n
     r_regs.f.h := w_half_carry
     r_regs.f.c := w_carry
   }
