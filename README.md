@@ -1,3 +1,5 @@
+[![Chisel-test](https://github.com/diningyo/chisel-dmg/actions/workflows/run-tests.yml/badge.svg)](https://github.com/diningyo/chisel-dmg/actions/workflows/run-tests.yml)
+
 # chisel-dmg
 
 Make GameBoy.
