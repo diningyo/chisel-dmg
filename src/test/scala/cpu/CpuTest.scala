@@ -162,6 +162,13 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
     }
   }
 
+  it should f"be passed 15_cpar.s test" in {
+    val testHexFilePath = s"src/test/resources/cpu/15_cpar.s.gb.hex"
+    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
+      Inst15CPAR(c)
+    }
+  }
+
   it should f"be passed 20_subar.s test" in {
     val testHexFilePath = s"src/test/resources/cpu/20_subar.s.gb.hex"
     test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
