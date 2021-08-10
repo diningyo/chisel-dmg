@@ -344,6 +344,9 @@ class Cpu extends Module {
     is (OP.AND) {
       w_alu_result := r_regs.a.read() & w_alu_op2
     }
+    is (OP.OR) {
+      w_alu_result := r_regs.a.read() | w_alu_op2
+    }
   }
 
   val w_wrbk = Wire(UInt(16.W))
@@ -367,7 +370,7 @@ class Cpu extends Module {
   when ((!w_valid && (w_ctrl.cycle === 1.U))) {
     when (w_ctrl.op === OP.LD) {
       r_regs.write(w_ctrl.is_dst_rp, w_ctrl.dst, w_wrbk)
-    }.elsewhen (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND) {
+    }.elsewhen (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND || w_ctrl.op === OP.OR) {
       r_regs.a.write(w_alu_result)
     }
   }.elsewhen(w_ctrl.cycle === 2.U) {
@@ -382,8 +385,9 @@ class Cpu extends Module {
 
   // flag reg update
   val w_zero = (Mux(w_ctrl.is_dst_rp, w_alu_result, w_alu_result(7, 0)) === 0.U)
+  // AND/ORの場合はbit[16]は必ず0になる
   val w_carry = Mux(w_ctrl.is_dst_rp, w_alu_result(16), w_alu_result(8))
-  // Hald Carryの16bitの時の扱いを確認
+  // Half Carryの16bitの時の扱いを確認
   val w_half_carry = Wire(Bool())
 
   when (w_ctrl.is_dst_rp) {
@@ -407,7 +411,7 @@ class Cpu extends Module {
     w_n := false.B
   }
 
-  when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND) {
+  when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND || w_ctrl.op === OP.OR) {
     r_regs.f.z := w_zero
     r_regs.f.n := w_n
     r_regs.f.h := w_half_carry

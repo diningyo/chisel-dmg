@@ -100,7 +100,7 @@ object Instructions {
   def XORAR    = BitPat("b10101???") // XOR A and R.
   def XORAN    = BitPat("b11101110") // XOR A and N.
   def XORAHL   = BitPat("b10101110") // XOR A and Mem(HL).
-  def ORAR     = BitPat("b10100???") // OR A and R.
+  def ORAR     = BitPat("b10110???") // OR A and R.
   def ORAN     = BitPat("b11110110") // OR A and N.
   def ORAHL    = BitPat("b10100110") // OR A and Mem(HL).
   def CPAR     = BitPat("b10101???") // Compare A and R.
@@ -178,9 +178,9 @@ object Instructions {
 }
 
 object OP extends ChiselEnum {
-  val LD, LDRHL, LDINC, LDDEC, STORE, STOREINC, STOREDEC = Value
-  val PUSH, POP = Value
-  val ADD, ADC, SUB, SUC, AND, XOR, OR, CP, INC, DEC, DAA, CPL = Value
+  val LD, LDRHL, LDINC, LDDEC, STORE, STOREINC, STOREDEC = Value // 0, 1, 2, 3, 4, 5, 6
+  val PUSH, POP = Value                                          // 7, 8
+  val ADD, ADC, SUB, SUC, AND, XOR, OR, CP, INC, DEC, DAA, CPL = Value // 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
   val PREFIXED = Value
   val RLCA, RLA, RRCA, RRA, RLC, RL, RRC, RR, SLA, SWAP, SRA, SRL = Value
   val BIT, SET, RES = Value
