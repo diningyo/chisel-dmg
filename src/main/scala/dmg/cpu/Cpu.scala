@@ -237,7 +237,7 @@ class Cpu extends Module {
     CPAR     -> List(decode(OP.CP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     CPAN     -> List(decode(OP.CP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     CPAHL    -> List(decode(OP.CP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    INCR     -> List(decode(OP.INC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    INCR     -> List(decode(OP.INC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_dst_reg)),
     INCHL    -> List(decode(OP.INC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     DECR     -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     DECHL    -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -329,7 +329,7 @@ class Cpu extends Module {
   // ALU
   val w_alu_result = Wire(UInt(17.W))
   val w_half_alu_result = Wire(UInt(5.W))
-  val w_alu_op2 = r_regs.read(w_ctrl.is_src_rp, w_src_reg)
+  val w_alu_op2 = r_regs.read(w_ctrl.is_src_rp, w_ctrl.src)
   w_alu_result := 0.U
   w_half_alu_result := 0.U
   switch (w_ctrl.op) {
@@ -353,6 +353,10 @@ class Cpu extends Module {
     is (OP.CP) {
       w_alu_result := r_regs.a.read() - w_alu_op2
       w_half_alu_result := r_regs.a.read()(3, 0) -& w_alu_op2(3, 0)
+    }
+    is (OP.INC) {
+      w_alu_result := w_alu_op2 + 1.U
+      w_half_alu_result := w_alu_op2(3, 0) +& 1.U
     }
   }
 
@@ -379,6 +383,8 @@ class Cpu extends Module {
       r_regs.write(w_ctrl.is_dst_rp, w_ctrl.dst, w_wrbk)
     }.elsewhen (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND || w_ctrl.op === OP.OR || w_ctrl.op === OP.XOR) {
       r_regs.a.write(w_alu_result)
+    }.elsewhen (w_ctrl.op === OP.INC) {
+      r_regs.write(w_ctrl.is_dst_rp, w_ctrl.dst, w_alu_result)
     }
   }.elsewhen(w_ctrl.cycle === 2.U) {
     when (w_ctrl.op === OP.LDINC || w_ctrl.op === OP.STOREINC) {
@@ -401,7 +407,7 @@ class Cpu extends Module {
     w_half_carry := w_alu_result(8)
   }.otherwise {
     // FIXME: 仕様を完全に把握してから最適化
-    when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.CP) {
+    when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.CP || w_ctrl.op === OP.INC) {
       w_half_carry := w_half_alu_result(4)
     }.elsewhen (w_ctrl.op === OP.AND) {
       w_half_carry := true.B
@@ -419,11 +425,13 @@ class Cpu extends Module {
   }
 
   when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND ||
-        w_ctrl.op === OP.OR || w_ctrl.op === OP.XOR || w_ctrl.op === OP.CP) {
+    w_ctrl.op === OP.OR || w_ctrl.op === OP.XOR || w_ctrl.op === OP.CP ||
+    w_ctrl.op === OP.INC
+  ) {
     r_regs.f.z := w_zero
     r_regs.f.n := w_n
     r_regs.f.h := w_half_carry
-    r_regs.f.c := w_carry
+    r_regs.f.c := Mux(w_ctrl.op === OP.INC, false.B, w_carry)
   }
 
   val w_addr = WireInit(0.U(16.W))

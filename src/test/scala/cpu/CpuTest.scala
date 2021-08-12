@@ -175,4 +175,11 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
       Inst15CPAR(c)
     }
   }
+
+  it should f"be passed 16_incr.s test" in {
+    val testHexFilePath = s"src/test/resources/cpu/16_incr.s.gb.hex"
+    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
+      Inst16INCR(c)
+    }
+  }
 }
