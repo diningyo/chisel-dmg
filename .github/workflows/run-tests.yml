@@ -69,11 +69,22 @@ jobs:
           sudo apt-get update
           sudo apt-get install sbt
 
+      - name: Cache test data
+        id: cache-test-data
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/work/chisel-dmg/chisel-dmg/src/test/resources/cpu/*.gb.hex*
+          key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.s') }}
+
+      - name: Build test data
+        if: steps.cache-test-data.outputs.cache-hit != 'true'
+        run: |
+           export PATH=/home/runner/tools/wla-dx/bin:$PATH
+           sbt "convertBin2Hex"
+
       - name: Run test
         run: |
            sudo apt-get install ccache
            export PATH=/home/runner/tools/verilator/bin:/home/runner/tools/wla-dx/bin:$PATH
-           echo "DUMMY RUN"
-           sbt "compile"
-           sbt "convertBin2Hex"
            sbt "testOnly CpuTest"
