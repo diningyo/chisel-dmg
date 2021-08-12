@@ -344,6 +344,9 @@ class Cpu extends Module {
     is (OP.AND) {
       w_alu_result := r_regs.a.read() & w_alu_op2
     }
+    is (OP.XOR) {
+      w_alu_result := r_regs.a.read() ^ w_alu_op2
+    }
     is (OP.OR) {
       w_alu_result := r_regs.a.read() | w_alu_op2
     }
@@ -370,7 +373,7 @@ class Cpu extends Module {
   when ((!w_valid && (w_ctrl.cycle === 1.U))) {
     when (w_ctrl.op === OP.LD) {
       r_regs.write(w_ctrl.is_dst_rp, w_ctrl.dst, w_wrbk)
-    }.elsewhen (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND || w_ctrl.op === OP.OR) {
+    }.elsewhen (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND || w_ctrl.op === OP.OR || w_ctrl.op === OP.XOR) {
       r_regs.a.write(w_alu_result)
     }
   }.elsewhen(w_ctrl.cycle === 2.U) {
@@ -411,7 +414,7 @@ class Cpu extends Module {
     w_n := false.B
   }
 
-  when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND || w_ctrl.op === OP.OR) {
+  when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND || w_ctrl.op === OP.OR || w_ctrl.op === OP.XOR) {
     r_regs.f.z := w_zero
     r_regs.f.n := w_n
     r_regs.f.h := w_half_carry
