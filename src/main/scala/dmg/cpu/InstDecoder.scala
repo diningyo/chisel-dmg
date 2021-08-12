@@ -103,7 +103,7 @@ object Instructions {
   def ORAR     = BitPat("b10110???") // OR A and R.
   def ORAN     = BitPat("b11110110") // OR A and N.
   def ORAHL    = BitPat("b10100110") // OR A and Mem(HL).
-  def CPAR     = BitPat("b10101???") // Compare A and R.
+  def CPAR     = BitPat("b10111???") // Compare A and R.
   def CPAN     = BitPat("b11111110") // Compare A and N.
   def CPAHL    = BitPat("b10101110") // Compare A and Mem(HL).
   def INCR     = BitPat("b00???100") // Increment R.

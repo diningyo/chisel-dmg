@@ -350,6 +350,10 @@ class Cpu extends Module {
     is (OP.OR) {
       w_alu_result := r_regs.a.read() | w_alu_op2
     }
+    is (OP.CP) {
+      w_alu_result := r_regs.a.read() - w_alu_op2
+      w_half_alu_result := r_regs.a.read()(3, 0) -& w_alu_op2(3, 0)
+    }
   }
 
   val w_wrbk = Wire(UInt(16.W))
@@ -397,7 +401,7 @@ class Cpu extends Module {
     w_half_carry := w_alu_result(8)
   }.otherwise {
     // FIXME: 仕様を完全に把握してから最適化
-    when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB) {
+    when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.CP) {
       w_half_carry := w_half_alu_result(4)
     }.elsewhen (w_ctrl.op === OP.AND) {
       w_half_carry := true.B
@@ -408,13 +412,14 @@ class Cpu extends Module {
 
   val w_n = WireInit(false.B)
 
-  when (w_ctrl.op === OP.SUB) {
+  when (w_ctrl.op === OP.SUB || w_ctrl.op === OP.CP) {
     w_n := true.B
   }.otherwise {
     w_n := false.B
   }
 
-  when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND || w_ctrl.op === OP.OR || w_ctrl.op === OP.XOR) {
+  when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND ||
+        w_ctrl.op === OP.OR || w_ctrl.op === OP.XOR || w_ctrl.op === OP.CP) {
     r_regs.f.z := w_zero
     r_regs.f.n := w_n
     r_regs.f.h := w_half_carry
