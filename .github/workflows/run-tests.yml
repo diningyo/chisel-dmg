@@ -22,22 +22,33 @@ jobs:
         uses: actions/cache@v2
         with:
           path: |
+            ~/ccache
             ~/verilator-4.210
+            ~/tools/ccache
             ~/tools/verilator
           key: ${{ runner.os }}-verilator
 
       - name: Build and Install Verilator
         if: steps.cache-verilator.outputs.cache-hit != 'true'
         run: |
-          sudo apt-get install git perl python3 make autoconf g++ flex bison ccache
+          sudo apt-get install git perl python3 make autoconf g++ flex bison cmake
           sudo apt-get install libfl2 libfl-dev
           sudo apt-get install zlibc zlib1g zlib1g-dev
-          wget https://github.com/verilator/verilator/archive/refs/tags/v4.210.tar.gz
-          tar xf v4.210.tar.gz
-          cd verilator-4.210
+          sudo apt-get install libzstd-dev libhiredis-dev
+          git clone https://github.com/ccache/ccache.git
+          cd ccache
+          git checkout -b v4.3 refs/tags/v4.3
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache ..
+          make -j && make install
+          export PATH=/home/runner/tools/ccache/bin:$PATH
+          cd ../../
+          git clone https://github.com/verilator/verilator.git
+          cd verilator
+          git checkout -b v4.210 refs/tags/v4.210
           autoconf
           ./configure --prefix=/home/runner/tools/verilator
-          make -j 2
+          make -j 3
           make install
 
       - name: Cache WLA DX
@@ -85,6 +96,5 @@ jobs:
 
       - name: Run test
         run: |
-           sudo apt-get install ccache
-           export PATH=/home/runner/tools/verilator/bin:/home/runner/tools/wla-dx/bin:$PATH
+           export PATH=/home/runner/tools/ccache/bin:/home/runner/tools/verilator/bin:/home/runner/tools/wla-dx/bin:$PATH
            sbt "testOnly CpuTest"
