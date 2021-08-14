@@ -105,81 +105,27 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
 
   import BlarggGbTests._
 
+  val unitInstructionTests = Seq(
+    "01_ld.s"    -> ((c: CpuTestTb) => Inst01LD(c)),
+    "02_ldi.s"   -> ((c: CpuTestTb) => Inst02LDI(c)),
+    "03_ldrhl.s" -> ((c: CpuTestTb) => Inst03LDRHL(c)),
+    "04_ldarp.s" -> ((c: CpuTestTb) => Inst04LDARP(c)),
+    "10_addar.s" -> ((c: CpuTestTb) => Inst10ADDAR(c)),
+    "11_subar.s" -> ((c: CpuTestTb) => Inst11SUBAR(c)),
+    "12_andar.s" -> ((c: CpuTestTb) => Inst12ANDAR(c)),
+    "13_xorar.s" -> ((c: CpuTestTb) => Inst13XORAR(c)),
+    "14_orar.s"  -> ((c: CpuTestTb) => Inst14ORAR(c)),
+    "15_cpar.s"  -> ((c: CpuTestTb) => Inst15CPAR(c)),
+    "16_incr.s"  -> ((c: CpuTestTb) => Inst16INCR(c)),
+  )
 
-  it should f"be passed 01_ld.s test" in {
-    val testHexFilePath = s"src/test/resources/cpu/01_ld.s.gb.hex"
-    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
-      Inst01LD(c)
-    }
-  }
-
-  it should f"be passed 02_ldi.s test" in {
-    val testHexFilePath = s"src/test/resources/cpu/02_ldi.s.gb.hex"
-    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
-      Inst02LDI(c)
-    }
-  }
-
-  it should f"be passed 03_ldrhl.s test" in {
-    val testHexFilePath = s"src/test/resources/cpu/03_ldrhl.s.gb.hex"
-    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
-      Inst03LDRHL(c)
-    }
-  }
-
-  it should f"be passed 04_ldarp.s test" in {
-    val testHexFilePath = s"src/test/resources/cpu/04_ldarp.s.gb.hex"
-    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
-      Inst04LDARP(c)
-    }
-  }
-
-  it should f"be passed 10_addar.s test" in {
-    val testHexFilePath = s"src/test/resources/cpu/10_addar.s.gb.hex"
-    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
-      Inst10ADDAR(c)
-    }
-  }
-
-  it should f"be passed 11_subar.s test" in {
-    val testHexFilePath = s"src/test/resources/cpu/11_subar.s.gb.hex"
-    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
-      Inst11SUBAR(c)
-    }
-  }
-
-  it should f"be passed 12_andar.s test" in {
-    val testHexFilePath = s"src/test/resources/cpu/12_andar.s.gb.hex"
-    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
-      Inst12ANDAR(c)
-    }
-  }
-
-  it should f"be passed 13_xorar.s test" in {
-    val testHexFilePath = s"src/test/resources/cpu/13_xorar.s.gb.hex"
-    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
-      Inst13XORAR(c)
-    }
-  }
-
-  it should f"be passed 14_orar.s test" in {
-    val testHexFilePath = s"src/test/resources/cpu/14_orar.s.gb.hex"
-    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
-      Inst14ORAR(c)
-    }
-  }
-
-  it should f"be passed 15_cpar.s test" in {
-    val testHexFilePath = s"src/test/resources/cpu/15_cpar.s.gb.hex"
-    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
-      Inst15CPAR(c)
-    }
-  }
-
-  it should f"be passed 16_incr.s test" in {
-    val testHexFilePath = s"src/test/resources/cpu/16_incr.s.gb.hex"
-    test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
-      Inst16INCR(c)
+  unitInstructionTests foreach { testInfo =>
+    val (asmFile, testFunc) = testInfo
+    it should f"be passed ${asmFile} test" in {
+      val testHexFilePath = s"src/test/resources/cpu/${asmFile}.gb.hex"
+      test(new CpuTestTb(testHexFilePath)).withAnnotations(annos) { c =>
+        testFunc(c)
+      }
     }
   }
 }
