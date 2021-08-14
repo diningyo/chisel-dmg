@@ -239,7 +239,7 @@ class Cpu extends Module {
     CPAHL    -> List(decode(OP.CP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     INCR     -> List(decode(OP.INC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_dst_reg)),
     INCHL    -> List(decode(OP.INC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    DECR     -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    DECR     -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_dst_reg)),
     DECHL    -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     DAA      -> List(decode(OP.DAA,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     ADDHLRP  -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_src_reg)),
@@ -358,6 +358,10 @@ class Cpu extends Module {
       w_alu_result := w_alu_op2 + 1.U
       w_half_alu_result := w_alu_op2(3, 0) +& 1.U
     }
+    is (OP.DEC) {
+      w_alu_result := w_alu_op2 - 1.U
+      w_half_alu_result := w_alu_op2(3, 0) -& 1.U
+    }
   }
 
   val w_wrbk = Wire(UInt(16.W))
@@ -381,9 +385,10 @@ class Cpu extends Module {
   when ((!w_valid && (w_ctrl.cycle === 1.U))) {
     when (w_ctrl.op === OP.LD) {
       r_regs.write(w_ctrl.is_dst_rp, w_ctrl.dst, w_wrbk)
+    // ここもALUでまとめられる？？
     }.elsewhen (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND || w_ctrl.op === OP.OR || w_ctrl.op === OP.XOR) {
       r_regs.a.write(w_alu_result)
-    }.elsewhen (w_ctrl.op === OP.INC) {
+    }.elsewhen (w_ctrl.op === OP.INC || w_ctrl.op === OP.DEC) {
       r_regs.write(w_ctrl.is_dst_rp, w_ctrl.dst, w_alu_result)
     }
   }.elsewhen(w_ctrl.cycle === 2.U) {
@@ -398,8 +403,21 @@ class Cpu extends Module {
 
   // flag reg update
   val w_zero = (Mux(w_ctrl.is_dst_rp, w_alu_result, w_alu_result(7, 0)) === 0.U)
+
   // AND/ORの場合はbit[16]は必ず0になる
-  val w_carry = Mux(w_ctrl.is_dst_rp, w_alu_result(16), w_alu_result(8))
+  val w_carry = WireInit(false.B)
+
+  // ADD/INCのときのみalu_result(8N)参照でいいのかも？
+  when (w_ctrl.is_dst_rp) {
+    w_carry := w_alu_result(16)
+  }.otherwise {
+    when (w_ctrl.op === OP.DEC) {
+      w_carry := false.B
+    }.otherwise {
+      w_carry := w_alu_result(8)
+    }
+  }
+
   // Half Carryの16bitの時の扱いを確認
   val w_half_carry = Wire(Bool())
 
@@ -407,7 +425,7 @@ class Cpu extends Module {
     w_half_carry := w_alu_result(8)
   }.otherwise {
     // FIXME: 仕様を完全に把握してから最適化
-    when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.CP || w_ctrl.op === OP.INC) {
+    when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.CP || w_ctrl.op === OP.INC || w_ctrl.op === OP.DEC) {
       w_half_carry := w_half_alu_result(4)
     }.elsewhen (w_ctrl.op === OP.AND) {
       w_half_carry := true.B
@@ -418,7 +436,7 @@ class Cpu extends Module {
 
   val w_n = WireInit(false.B)
 
-  when (w_ctrl.op === OP.SUB || w_ctrl.op === OP.CP) {
+  when (w_ctrl.op === OP.SUB || w_ctrl.op === OP.CP || w_ctrl.op === OP.DEC) {
     w_n := true.B
   }.otherwise {
     w_n := false.B
@@ -426,7 +444,7 @@ class Cpu extends Module {
 
   when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND ||
     w_ctrl.op === OP.OR || w_ctrl.op === OP.XOR || w_ctrl.op === OP.CP ||
-    w_ctrl.op === OP.INC
+    w_ctrl.op === OP.INC || w_ctrl.op === OP.DEC
   ) {
     r_regs.f.z := w_zero
     r_regs.f.n := w_n
