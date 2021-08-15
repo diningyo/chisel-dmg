@@ -187,6 +187,7 @@ class Cpu extends Module {
     d
   }
 
+  // FIXME: imm/memは統合できる説
   val decodeTable = Array(
              //                op,     cycle,     pre,     imm,     mem,  dst_rp,  src_rp,       dst,       src
     LDRN     -> List(decode(OP.LD,       2.U, false.B, true.B,  false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -214,7 +215,7 @@ class Cpu extends Module {
     PUSHRP   -> List(decode(OP.PUSH,     1.U, false.B, false.B, false.B, true.B,  true.B,  w_dst_reg, w_rp)),
     POPRP    -> List(decode(OP.POP,      1.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_src_reg)),
     ADDAR    -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    ADDAN    -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    ADDAN    -> List(decode(OP.ADD,      2.U, false.B, true.B,  false.B, false.B, false.B, A,         w_src_reg)),
     ADDAHL   -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     ADCAR    -> List(decode(OP.ADC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     ADCAN    -> List(decode(OP.ADC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -270,31 +271,33 @@ class Cpu extends Module {
     CPL      -> List(decode(OP.CPL,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg))
   )
 
-  val w_valid = Wire(Bool())
+  val w_running = Wire(Bool())
   val w_ctrl = ListLookup(
     w_op_code,
     List(decode(OP.NOP, 1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     decodeTable).head
 
   val r_mcyc_counter = RegInit(0.U(3.W))
-  w_valid := (r_mcyc_counter =/= 0.U)
+  w_running := (r_mcyc_counter =/= 0.U)
   val r_ctrl = Reg(new DecodedInst)
 
-  w_op_code := Mux(w_valid, 0.U, io.mem.rddata)
+  w_op_code := Mux(w_running, 0.U, io.mem.rddata)
 
   // increment PC.
   when (!w_ctrl.is_mem) {
     r_regs.pc.inc
   }
 
-  when (!w_valid && w_ctrl.cycle =/= 0.U) {
+  when (!w_running && w_ctrl.cycle =/= 0.U) {
     r_mcyc_counter := w_ctrl.cycle - 1.U
     r_ctrl := w_ctrl
-  }.elsewhen (w_valid) {
+  }.elsewhen (w_running) {
     r_mcyc_counter := r_mcyc_counter - 1.U
   }
 
-  val r_prefixed_valid = RegNext(w_valid && (w_ctrl.op === OP.PREFIXED))
+  val w_exe_ctrl: DecodedInst = Mux(!w_running, w_ctrl, r_ctrl)
+
+  val r_prefixed_valid = RegNext(w_running && (w_exe_ctrl.op === OP.PREFIXED))
 
   val prefixedDecodeTable = Array(
     RLCR     -> List(decode(OP.RLC,  1.U, false.B, false.B, false.B, false.B, false.B, A, w_src_reg)),
@@ -329,10 +332,10 @@ class Cpu extends Module {
   // ALU
   val w_alu_result = Wire(UInt(17.W))
   val w_half_alu_result = Wire(UInt(5.W))
-  val w_alu_op2 = r_regs.read(w_ctrl.is_src_rp, w_ctrl.src)
+  val w_alu_op2 = Mux(w_exe_ctrl.is_imm || w_exe_ctrl.is_mem, io.mem.rddata, r_regs.read(w_exe_ctrl.is_src_rp, w_exe_ctrl.src))
   w_alu_result := 0.U
   w_half_alu_result := 0.U
-  switch (w_ctrl.op) {
+  switch (w_exe_ctrl.op) {
     is (OP.ADD) {
       w_alu_result := r_regs.a.read() + w_alu_op2
       w_half_alu_result := r_regs.a.read()(3, 0) +& w_alu_op2(3, 0)
@@ -366,7 +369,7 @@ class Cpu extends Module {
 
   val w_wrbk = Wire(UInt(16.W))
 
-  when (w_valid) {
+  when (w_running) {
     when (r_ctrl.op === OP.LD) {
       when (r_ctrl.is_imm || r_ctrl.is_mem) {
         w_wrbk := io.mem.rddata
@@ -378,40 +381,42 @@ class Cpu extends Module {
     }
   }.otherwise {
     // 1-cycle instruction
-    w_wrbk := r_regs.read(w_ctrl.is_src_rp, w_ctrl.src)
+    w_wrbk := r_regs.read(w_exe_ctrl.is_src_rp, w_exe_ctrl.src)
   }
 
   // reg writeback
-  when ((!w_valid && (w_ctrl.cycle === 1.U))) {
-    when (w_ctrl.op === OP.LD) {
-      r_regs.write(w_ctrl.is_dst_rp, w_ctrl.dst, w_wrbk)
-    // ここもALUでまとめられる？？
-    }.elsewhen (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND || w_ctrl.op === OP.OR || w_ctrl.op === OP.XOR) {
+  val w_en_reg_wrbk = (w_exe_ctrl.op =/= OP.NOP) && (w_exe_ctrl.cycle === 1.U) || (w_running && (r_mcyc_counter === 1.U))
+
+  when (w_en_reg_wrbk) {
+    // FIXME: OP.LDのみに出来そう
+    when (w_exe_ctrl.op === OP.LD || w_exe_ctrl.op === OP.LDRHL || w_exe_ctrl.op === OP.LDINC || w_exe_ctrl.op === OP.LDDEC) {
+      r_regs.write(w_exe_ctrl.is_dst_rp, w_exe_ctrl.dst, w_wrbk)
+    // FIXME: ここもALUでまとめられる？？
+    }.elsewhen (w_exe_ctrl.op === OP.ADD || w_exe_ctrl.op === OP.SUB || w_exe_ctrl.op === OP.AND || w_exe_ctrl.op === OP.OR || w_exe_ctrl.op === OP.XOR) {
       r_regs.a.write(w_alu_result)
-    }.elsewhen (w_ctrl.op === OP.INC || w_ctrl.op === OP.DEC) {
-      r_regs.write(w_ctrl.is_dst_rp, w_ctrl.dst, w_alu_result)
+    }.elsewhen (w_exe_ctrl.op === OP.INC || w_exe_ctrl.op === OP.DEC) {
+      r_regs.write(w_exe_ctrl.is_dst_rp, w_exe_ctrl.dst, w_alu_result)
     }
-  }.elsewhen(w_ctrl.cycle === 2.U) {
-    when (w_ctrl.op === OP.LDINC || w_ctrl.op === OP.STOREINC) {
+
+    // FIXME: ALU経由にしたい
+    when (w_exe_ctrl.op === OP.LDINC || w_exe_ctrl.op === OP.STOREINC) {
       r_regs.write_hl(r_regs.read_hl + 1.U)
-    }.elsewhen(w_ctrl.op === OP.LDDEC || w_ctrl.op === OP.STOREDEC) {
+    }.elsewhen(w_exe_ctrl.op === OP.LDDEC || w_exe_ctrl.op === OP.STOREDEC) {
       r_regs.write_hl(r_regs.read_hl - 1.U)
     }
-  }.elsewhen((r_mcyc_counter === 1.U) && (r_ctrl.is_imm || r_ctrl.is_mem)) {
-    r_regs.write(r_ctrl.is_dst_rp, r_ctrl.dst, w_wrbk)
   }
 
   // flag reg update
-  val w_zero = (Mux(w_ctrl.is_dst_rp, w_alu_result, w_alu_result(7, 0)) === 0.U)
+  val w_zero = (Mux(w_exe_ctrl.is_dst_rp, w_alu_result, w_alu_result(7, 0)) === 0.U)
 
   // AND/ORの場合はbit[16]は必ず0になる
   val w_carry = WireInit(false.B)
 
   // ADD/INCのときのみalu_result(8N)参照でいいのかも？
-  when (w_ctrl.is_dst_rp) {
+  when (w_exe_ctrl.is_dst_rp) {
     w_carry := w_alu_result(16)
   }.otherwise {
-    when (w_ctrl.op === OP.DEC) {
+    when (w_exe_ctrl.op === OP.DEC) {
       w_carry := false.B
     }.otherwise {
       w_carry := w_alu_result(8)
@@ -421,13 +426,13 @@ class Cpu extends Module {
   // Half Carryの16bitの時の扱いを確認
   val w_half_carry = Wire(Bool())
 
-  when (w_ctrl.is_dst_rp) {
+  when (w_exe_ctrl.is_dst_rp) {
     w_half_carry := w_alu_result(8)
   }.otherwise {
     // FIXME: 仕様を完全に把握してから最適化
-    when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.CP || w_ctrl.op === OP.INC || w_ctrl.op === OP.DEC) {
+    when (w_exe_ctrl.op === OP.ADD || w_exe_ctrl.op === OP.SUB || w_exe_ctrl.op === OP.CP || w_exe_ctrl.op === OP.INC || w_exe_ctrl.op === OP.DEC) {
       w_half_carry := w_half_alu_result(4)
-    }.elsewhen (w_ctrl.op === OP.AND) {
+    }.elsewhen (w_exe_ctrl.op === OP.AND) {
       w_half_carry := true.B
     }.otherwise {
       w_half_carry := false.B
@@ -436,20 +441,22 @@ class Cpu extends Module {
 
   val w_n = WireInit(false.B)
 
-  when (w_ctrl.op === OP.SUB || w_ctrl.op === OP.CP || w_ctrl.op === OP.DEC) {
+  when (w_exe_ctrl.op === OP.SUB || w_exe_ctrl.op === OP.CP || w_exe_ctrl.op === OP.DEC) {
     w_n := true.B
   }.otherwise {
     w_n := false.B
   }
 
-  when (w_ctrl.op === OP.ADD || w_ctrl.op === OP.SUB || w_ctrl.op === OP.AND ||
-    w_ctrl.op === OP.OR || w_ctrl.op === OP.XOR || w_ctrl.op === OP.CP ||
-    w_ctrl.op === OP.INC || w_ctrl.op === OP.DEC
+  when (
+    w_en_reg_wrbk &&
+    (w_exe_ctrl.op === OP.ADD || w_exe_ctrl.op === OP.SUB || w_exe_ctrl.op === OP.AND ||
+      w_exe_ctrl.op === OP.OR || w_exe_ctrl.op === OP.XOR || w_exe_ctrl.op === OP.CP ||
+      w_exe_ctrl.op === OP.INC || w_exe_ctrl.op === OP.DEC)
   ) {
     r_regs.f.z := w_zero
     r_regs.f.n := w_n
     r_regs.f.h := w_half_carry
-    r_regs.f.c := Mux(w_ctrl.op === OP.INC, false.B, w_carry)
+    r_regs.f.c := Mux(w_exe_ctrl.op === OP.INC, false.B, w_carry)
   }
 
   val w_addr = WireInit(0.U(16.W))
