@@ -242,7 +242,7 @@ class Cpu extends Module {
     INCHL    -> List(decode(OP.INC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     DECR     -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_dst_reg)),
     DECHL    -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    DAA      -> List(decode(OP.DAA,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    DAA      -> List(decode(OP.DAA,      1.U, false.B, false.B, false.B, false.B, false.B, A,         A)),
     ADDHLRP  -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_src_reg)),
     INCRP    -> List(decode(OP.INC,      1.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_src_reg)),
     DECRP    -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_src_reg)),
@@ -365,6 +365,19 @@ class Cpu extends Module {
       w_alu_result := w_alu_op2 - 1.U
       w_half_alu_result := w_alu_op2(3, 0) -& 1.U
     }
+    is (OP.DAA) {
+      val w_lower_result = WireInit(w_alu_op2)
+
+      when (w_alu_op2(3, 0) >= 0xa.U || r_regs.f.h) {
+        w_lower_result := w_alu_op2 + 6.U
+      }
+
+      when (w_lower_result(7, 4) >= 0xa.U || r_regs.f.c) {
+        w_alu_result := w_lower_result + 0x60.U
+      }.otherwise {
+        w_alu_result := w_lower_result
+      }
+    }
   }
 
   val w_wrbk = Wire(UInt(16.W))
@@ -392,7 +405,7 @@ class Cpu extends Module {
     when (w_exe_ctrl.op === OP.LD || w_exe_ctrl.op === OP.LDRHL || w_exe_ctrl.op === OP.LDINC || w_exe_ctrl.op === OP.LDDEC) {
       r_regs.write(w_exe_ctrl.is_dst_rp, w_exe_ctrl.dst, w_wrbk)
     // FIXME: ここもALUでまとめられる？？
-    }.elsewhen (w_exe_ctrl.op === OP.ADD || w_exe_ctrl.op === OP.SUB || w_exe_ctrl.op === OP.AND || w_exe_ctrl.op === OP.OR || w_exe_ctrl.op === OP.XOR) {
+    }.elsewhen (w_exe_ctrl.op === OP.ADD || w_exe_ctrl.op === OP.SUB || w_exe_ctrl.op === OP.AND || w_exe_ctrl.op === OP.OR || w_exe_ctrl.op === OP.XOR || w_ctrl.op === OP.DAA) {
       r_regs.a.write(w_alu_result)
     }.elsewhen (w_exe_ctrl.op === OP.INC || w_exe_ctrl.op === OP.DEC) {
       r_regs.write(w_exe_ctrl.is_dst_rp, w_exe_ctrl.dst, w_alu_result)
@@ -419,7 +432,11 @@ class Cpu extends Module {
     when (w_exe_ctrl.op === OP.DEC) {
       w_carry := false.B
     }.otherwise {
-      w_carry := w_alu_result(8)
+      when (w_ctrl.op === OP.DAA && r_regs.f.c) {
+        w_carry := true.B
+      }.otherwise {
+        w_carry := w_alu_result(8)
+      }
     }
   }
 
@@ -451,7 +468,7 @@ class Cpu extends Module {
     w_en_reg_wrbk &&
     (w_exe_ctrl.op === OP.ADD || w_exe_ctrl.op === OP.SUB || w_exe_ctrl.op === OP.AND ||
       w_exe_ctrl.op === OP.OR || w_exe_ctrl.op === OP.XOR || w_exe_ctrl.op === OP.CP ||
-      w_exe_ctrl.op === OP.INC || w_exe_ctrl.op === OP.DEC)
+      w_exe_ctrl.op === OP.INC || w_exe_ctrl.op === OP.DEC || w_ctrl.op === OP.DAA)
   ) {
     r_regs.f.z := w_zero
     r_regs.f.n := w_n

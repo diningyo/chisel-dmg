@@ -57,7 +57,7 @@
     ld  a, $10                  ; a = $0a
     add a, $01                  ; b = $02 / c = 0
     ld  a, $a0                  ; a = $a0
-    daa                         ; a = $00 / z = 0 / c = 1
+    daa                         ; a = $00 / z = 1 / c = 1
     ld  a, $10                  ; a = $0a
     add a, $01                  ; b = $02 / c = 0
     ld  a, $f0                  ; a = $f0
