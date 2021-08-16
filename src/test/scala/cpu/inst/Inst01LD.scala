@@ -6,7 +6,7 @@ object Inst01LD extends TestUtil {
     dut.clock.setTimeout(100)
 
     compareReg(0, 0, 0, 0, 0, 0, 0, 0, 0x100, false, false, false, false)
-
+    /////
     // 1cycleごとに期待値を比較していく
     // NOTE: 初期値どうしよう。。bgbの値に合わせても良いのかも。
     // ld a, $a5                  ; a = $a5
