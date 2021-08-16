@@ -221,7 +221,7 @@ class Cpu extends Module {
     ADCAN    -> List(decode(OP.ADC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     ADCAHL   -> List(decode(OP.ADC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     SUBAR    -> List(decode(OP.SUB,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    SUBAN    -> List(decode(OP.SUB,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    SUBAN    -> List(decode(OP.SUB,      2.U, false.B, true.B,  false.B, false.B, false.B, A,         w_src_reg)),
     SUBAHL   -> List(decode(OP.SUB,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     SUCAR    -> List(decode(OP.SUC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     SUCAN    -> List(decode(OP.SUC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
