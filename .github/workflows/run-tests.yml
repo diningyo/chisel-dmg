@@ -82,6 +82,7 @@ jobs:
           key: ${{ runner.os }}-sbt
 
       - name: Install sbt
+        if: steps.cache-sbt.outputs.cache-hit != 'true'
         run: |
           wget https://github.com/sbt/sbt/releases/download/v1.5.5/sbt-1.5.5.tgz
           tar xf sbt-1.5.5.tgz
