@@ -95,9 +95,6 @@ jobs:
             ~/work/chisel-dmg/chisel-dmg/src/test/resources/cpu/*.gb.hex*
           key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.s') }}
 
-      - name: Setup tools
-        run:
-
       - name: Build test data
         if: steps.cache-test-data.outputs.cache-hit != 'true'
         run: |
