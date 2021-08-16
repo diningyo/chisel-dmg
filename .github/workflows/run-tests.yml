@@ -96,13 +96,15 @@ jobs:
           key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.s') }}
 
       - name: Setup tools
-        run: export PATH=/home/runner/tools/sbt/bin:/home/runner/tools/ccache/bin:/home/runner/tools/verilator/bin:/home/runner/tools/wla-dx/bin:$PATH
+        run:
 
       - name: Build test data
         if: steps.cache-test-data.outputs.cache-hit != 'true'
         run: |
+           export PATH=/home/runner/tools/sbt/bin:/home/runner/tools/wla-dx/bin:$PATH
            sbt "convertBin2Hex"
 
       - name: Run test
         run: |
+           export PATH=/home/runner/tools/sbt/bin:/home/runner/tools/ccache/bin:/home/runner/tools/verilator/bin:/home/runner/tools/wla-dx/bin:$PATH
            sbt "testOnly CpuTest"
