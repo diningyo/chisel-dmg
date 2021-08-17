@@ -227,7 +227,7 @@ class Cpu extends Module {
     SUCAN    -> List(decode(OP.SUC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     SUCAHL   -> List(decode(OP.SUC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     ANDAR    -> List(decode(OP.AND,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    ANDAN    -> List(decode(OP.AND,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    ANDAN    -> List(decode(OP.AND,      2.U, false.B, true.B , false.B, false.B, false.B, A,         w_src_reg)),
     ANDAHL   -> List(decode(OP.AND,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     XORAR    -> List(decode(OP.XOR,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     XORAN    -> List(decode(OP.XOR,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
