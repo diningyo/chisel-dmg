@@ -97,7 +97,7 @@ class CpuTestTb(val testRom: String) extends Module {
   io.regs := w_regs
 }
 
-class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
+class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers with ParallelTestExecution {
 
   val annos = Seq(VerilatorBackendAnnotation)
 
