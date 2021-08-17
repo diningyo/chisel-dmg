@@ -2,7 +2,7 @@ import chisel3._
 import org.scalatest._
 import chiseltest._
 
-object Inst14ORAR extends FlatSpec with ChiselScalatestTester with TestUtil {
+object Inst140ORAR extends FlatSpec with ChiselScalatestTester with TestUtil {
   def apply(implicit dut: CpuTestTb) {
     // test code starts from $0150.
     dut.clock.step(0x50)

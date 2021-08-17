@@ -2,7 +2,7 @@ import chisel3._
 import org.scalatest._
 import chiseltest._
 
-object Inst04LDARP extends FlatSpec with ChiselScalatestTester with TestUtil {
+object Inst003LDARP extends FlatSpec with ChiselScalatestTester with TestUtil {
   def apply(implicit dut: CpuTestTb) {
     // ld b, $10                   ; b  = $10
     //            a     b     c     d     e     h     l    sp      pc    f_z    f_n    f_h    f_c
