@@ -106,21 +106,21 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers {
   import BlarggGbTests._
 
   val unitInstructionTests = Seq(
-    "01_ld.s"     -> ((c: CpuTestTb) => Inst01LD(c)),
-    "02_ldi.s"    -> ((c: CpuTestTb) => Inst02LDI(c)),
-    "03_ldrhl.s"  -> ((c: CpuTestTb) => Inst03LDRHL(c)),
-    "04_ldarp.s"  -> ((c: CpuTestTb) => Inst04LDARP(c)),
-    "10_addar.s"  -> ((c: CpuTestTb) => Inst10ADDAR(c)),
+    "000_ld.s"    -> ((c: CpuTestTb) => Inst000LD(c)),
+    "001_ldi.s"   -> ((c: CpuTestTb) => Inst001LDI(c)),
+    "002_ldrhl.s" -> ((c: CpuTestTb) => Inst002LDRHL(c)),
+    "003_ldarp.s" -> ((c: CpuTestTb) => Inst003LDARP(c)),
+    "100_addar.s" -> ((c: CpuTestTb) => Inst100ADDAR(c)),
     "101_addan.s" -> ((c: CpuTestTb) => Inst101ADDAN(c)),
-    "11_subar.s"  -> ((c: CpuTestTb) => Inst11SUBAR(c)),
+    "110_subar.s" -> ((c: CpuTestTb) => Inst110SUBAR(c)),
     "111_suban.s" -> ((c: CpuTestTb) => Inst111SUBAN(c)),
-    "12_andar.s"  -> ((c: CpuTestTb) => Inst12ANDAR(c)),
-    "13_xorar.s"  -> ((c: CpuTestTb) => Inst13XORAR(c)),
-    "14_orar.s"   -> ((c: CpuTestTb) => Inst14ORAR(c)),
-    "15_cpar.s"   -> ((c: CpuTestTb) => Inst15CPAR(c)),
-    "16_incr.s"   -> ((c: CpuTestTb) => Inst16INCR(c)),
-    "17_decr.s"   -> ((c: CpuTestTb) => Inst17DECR(c)),
-    "18_daa.s"   -> ((c: CpuTestTb) => Inst18DAA(c)),
+    "120_andar.s" -> ((c: CpuTestTb) => Inst120ANDAR(c)),
+    "130_xorar.s" -> ((c: CpuTestTb) => Inst130XORAR(c)),
+    "140_orar.s"  -> ((c: CpuTestTb) => Inst140ORAR(c)),
+    "150_cpar.s"  -> ((c: CpuTestTb) => Inst150CPAR(c)),
+    "160_incr.s"  -> ((c: CpuTestTb) => Inst160INCR(c)),
+    "170_decr.s"  -> ((c: CpuTestTb) => Inst170DECR(c)),
+    "180_daa.s"   -> ((c: CpuTestTb) => Inst180DAA(c)),
   )
 
   unitInstructionTests foreach { testInfo =>
