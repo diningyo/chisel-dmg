@@ -205,7 +205,7 @@ class Cpu extends Module {
     LDNNA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDHAC    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDHCA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    LDHAN    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    LDHAN    -> List(decode(OP.LD,       3.U, false.B, false.B, true.B,  false.B, false.B, A,         w_src_reg)),
     LDHNA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDHLDA   -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDHLIA   -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -284,7 +284,7 @@ class Cpu extends Module {
   w_op_code := Mux(w_running, 0.U, io.mem.rddata)
 
   // increment PC.
-  when (!w_ctrl.is_mem) {
+  when (!((w_ctrl.is_mem && (r_mcyc_counter === 1.U)) || (r_mcyc_counter >= 2.U))) {
     r_regs.pc.inc
   }
 
@@ -478,12 +478,18 @@ class Cpu extends Module {
 
   val w_addr = WireInit(0.U(16.W))
 
-  when (w_ctrl.op === OP.LDRHL) {
-    w_addr := r_regs.read_hl
+  when (w_ctrl.is_mem && r_mcyc_counter === 1.U) {
+    when (w_ctrl.op === OP.LDRHL) {
+      w_addr := r_regs.read_hl
+    }.otherwise {
+      w_addr := r_regs.read(true.B, w_ctrl.src)
+    }
+  }.elsewhen (r_mcyc_counter === 2.U) {
+    w_addr := Cat(0xff.U, io.mem.rddata)
   }.otherwise {
-    w_addr := r_regs.read(true.B, w_ctrl.src)
+    w_addr := r_regs.pc.read()
   }
 
-  io.mem.addr := Mux(w_ctrl.is_mem, w_addr, r_regs.pc.read)
+  io.mem.addr := w_addr
   io.mem.wen := false.B
 }
