@@ -195,17 +195,17 @@ class Cpu extends Module {
     LDRR     -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDHLR    -> List(decode(OP.STORE,    1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDHLN    -> List(decode(OP.STORE,    1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    LDABC    -> List(decode(OP.LD,       2.U, false.B, false.B, true.B,  false.B,  true.B, A,       BC)), // BC/DEはまとめられる？？
-    LDADE    -> List(decode(OP.LD,       2.U, false.B, false.B, true.B,  false.B,  true.B, A,       DE)),
-    LDAHLI   -> List(decode(OP.LDINC,    2.U, false.B, false.B, true.B,  false.B,  true.B, A,       HL)),
-    LDAHLD   -> List(decode(OP.LDDEC,    2.U, false.B, false.B, true.B,  false.B,  true.B, A,       HL)),
+    LDABC    -> List(decode(OP.LDARP,    2.U, false.B, false.B, true.B,  false.B,  true.B, A,         BC)), // BC/DEはまとめられる？？
+    LDADE    -> List(decode(OP.LDARP,    2.U, false.B, false.B, true.B,  false.B,  true.B, A,         DE)),
+    LDAHLI   -> List(decode(OP.LDINC,    2.U, false.B, false.B, true.B,  false.B,  true.B, A,         HL)),
+    LDAHLD   -> List(decode(OP.LDDEC,    2.U, false.B, false.B, true.B,  false.B,  true.B, A,         HL)),
     LDBCA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDDEA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDANN    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDNNA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDHAC    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDHCA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    LDHAN    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    LDHAN    -> List(decode(OP.LD,       3.U, false.B, false.B, true.B,  false.B, false.B, A,         w_src_reg)),
     LDHNA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDHLDA   -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDHLIA   -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -284,7 +284,7 @@ class Cpu extends Module {
   w_op_code := Mux(w_running, 0.U, io.mem.rddata)
 
   // increment PC.
-  when (!w_ctrl.is_mem) {
+  when (!((w_ctrl.is_mem && (r_mcyc_counter <= 1.U)))) {
     r_regs.pc.inc
   }
 
@@ -402,7 +402,8 @@ class Cpu extends Module {
 
   when (w_en_reg_wrbk) {
     // FIXME: OP.LDのみに出来そう
-    when (w_exe_ctrl.op === OP.LD || w_exe_ctrl.op === OP.LDRHL || w_exe_ctrl.op === OP.LDINC || w_exe_ctrl.op === OP.LDDEC) {
+    when (w_exe_ctrl.op === OP.LD || w_exe_ctrl.op === OP.LDRHL || w_exe_ctrl.op === OP.LDARP ||
+          w_exe_ctrl.op === OP.LDH || w_exe_ctrl.op === OP.LDINC || w_exe_ctrl.op === OP.LDDEC) {
       r_regs.write(w_exe_ctrl.is_dst_rp, w_exe_ctrl.dst, w_wrbk)
     // FIXME: ここもALUでまとめられる？？
     }.elsewhen (w_exe_ctrl.op === OP.ADD || w_exe_ctrl.op === OP.SUB || w_exe_ctrl.op === OP.AND || w_exe_ctrl.op === OP.OR || w_exe_ctrl.op === OP.XOR || w_ctrl.op === OP.DAA) {
@@ -478,12 +479,16 @@ class Cpu extends Module {
 
   val w_addr = WireInit(0.U(16.W))
 
-  when (w_ctrl.op === OP.LDRHL) {
+  when (w_ctrl.op === OP.LDRHL || w_ctrl.op === OP.LDINC || w_ctrl.op === OP.LDDEC) {
     w_addr := r_regs.read_hl
-  }.otherwise {
+  }.elsewhen (w_ctrl.op === OP.LDARP) {
     w_addr := r_regs.read(true.B, w_ctrl.src)
+  }.elsewhen (w_ctrl.op === OP.LDH || r_mcyc_counter === 2.U) {
+    w_addr := Cat(0xff.U, io.mem.rddata)
+  }.otherwise {
+    w_addr := r_regs.pc.read()
   }
 
-  io.mem.addr := Mux(w_ctrl.is_mem, w_addr, r_regs.pc.read)
+  io.mem.addr := w_addr
   io.mem.wen := false.B
 }

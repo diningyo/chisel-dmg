@@ -26,9 +26,9 @@ import chisel3.experimental.{IntParam, StringParam}
 
 class xilinx_mem(val hexPath: String) extends BlackBox(
   Map(
-    "p_ADDR_BITS" -> IntParam(16),
+    "p_ADDR_BITS" -> IntParam(17),
     "p_DATA_BITS" -> IntParam(8),
-    "p_MEM_ROW_NUM" -> IntParam(0x10000),
+    "p_MEM_ROW_NUM" -> IntParam(0x20000),
     "p_INIT_HEX_FILE" -> StringParam(hexPath)
   )) with HasBlackBoxResource {
   val io = IO(new Bundle {
@@ -36,7 +36,7 @@ class xilinx_mem(val hexPath: String) extends BlackBox(
     val clk = Input(Clock())
 
    // memory
-    val addr = Input(UInt(16.W))
+    val addr = Input(UInt(17.W))
     val q = Output(UInt(8.W))
     val ren = Input(Bool())
     val wen = Input(Bool())

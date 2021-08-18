@@ -178,7 +178,7 @@ object Instructions {
 }
 
 object OP extends ChiselEnum {
-  val LD, LDRHL, LDINC, LDDEC, STORE, STOREINC, STOREDEC = Value // 0, 1, 2, 3, 4, 5, 6
+  val LD, LDRHL, LDARP, LDINC, LDDEC, LDH, LDNN, STORE, STOREINC, STOREDEC = Value // 0, 1, 2, 3, 4, 5, 6
   val PUSH, POP = Value                                          // 7, 8
   val ADD, ADC, SUB, SUC, AND, XOR, OR, CP, INC, DEC, DAA, CPL = Value // 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
   val PREFIXED = Value
