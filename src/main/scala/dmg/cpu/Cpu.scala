@@ -253,7 +253,7 @@ class Cpu extends Module {
     RRCA     -> List(decode(OP.RRCA,     1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     RRA      -> List(decode(OP.RRA,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     PREFIXED -> List(decode(OP.PREFIXED, 1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    JPNN     -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    JPNN     -> List(decode(OP.JP,       4.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     JPHL     -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     JPCCNN   -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     JPCCE    -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -385,6 +385,8 @@ class Cpu extends Module {
   }
 
   val w_wrbk = Wire(UInt(16.W))
+  val r_addr_msb = RegInit(0.U(8.W))
+  val r_addr_lsb = RegInit(0.U(8.W))
 
   when (w_running) {
     when (r_ctrl.op === OP.LD) {
@@ -393,6 +395,8 @@ class Cpu extends Module {
       }.otherwise {
         w_wrbk := r_regs.read(r_ctrl.is_src_rp, r_ctrl.src)
       }
+    }.elsewhen (w_exe_ctrl.op === OP.JP) {
+      w_wrbk := Cat(r_addr_msb, r_addr_lsb)
     }.otherwise {
       w_wrbk := io.mem.rddata
     }
@@ -483,11 +487,16 @@ class Cpu extends Module {
     r_regs.f.c := Mux(w_exe_ctrl.op === OP.INC, false.B, w_carry)
   }
 
+  when (w_exe_ctrl.op === OP.JP && r_mcyc_counter === 1.U) {
+    r_regs.pc.write(w_wrbk)
+  }
 
-  val r_addr_lsb = RegInit(0.U(8.W))
-
-  when (w_exe_ctrl.op === OP.LDANN && r_mcyc_counter === 3.U) {
+  when ((w_exe_ctrl.op === OP.LDANN || w_exe_ctrl.op === OP.JP) && r_mcyc_counter === 3.U) {
     r_addr_lsb := io.mem.rddata
+  }
+
+  when (w_exe_ctrl.op === OP.JP && r_mcyc_counter === 2.U) {
+    r_addr_msb := io.mem.rddata
   }
 
   val w_addr = dontTouch(WireInit(0.U(16.W)))
