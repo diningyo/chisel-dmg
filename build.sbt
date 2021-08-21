@@ -50,16 +50,11 @@ convertBin2Hex := {
     // build test ROM code
     val workDir = testSourcefile.getParent
     val romObjPath = s"${workDir}/test.o"
-
     val romObj = new File(romObjPath)
 
-    if (romObj.exists) {
-      println(s"${romObj.getPath} is exists, so remove it")
-      romObj.delete
-    }
-
     // compile
-    val wlaBuildResult = s"wla-gb -o ${romObjPath} ${testSourcefile.getPath}" !!
+    val asmSourcePath = s"${testSourcefile.getPath}"
+    val wlaBuildResult = s"wla-gb -o ${romObjPath} ${asmSourcePath}" !!
 
     // link
     val linkFilePath = s"${workDir}/linkfile"
@@ -84,7 +79,7 @@ convertBin2Hex := {
     pw.close
 
     // cleanup
-    val removeList = List(gbFilePath, romObjPath)
+    val removeList = List(s"${asmSourcePath}.sym", romObjPath)
 
     removeList.foreach { filePath =>
       (new File(filePath)).delete
