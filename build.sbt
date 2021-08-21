@@ -53,7 +53,7 @@ convertBin2Hex := {
 
     val romObj = new File(romObjPath)
 
-    if (romObj.exists == true) {
+    if (romObj.exists) {
       println(s"${romObj.getPath} is exists, so remove it")
       romObj.delete
     }
@@ -81,7 +81,14 @@ convertBin2Hex := {
       }
     }
 
-    pw.close()
+    pw.close
+
+    // cleanup
+    val removeList = List(gbFilePath, romObjPath)
+
+    removeList.foreach { filePath =>
+      (new File(filePath)).delete
+    }
   }
 }
 
