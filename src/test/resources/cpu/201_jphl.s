@@ -26,11 +26,13 @@
     ld h, $10
     ld l, $20
     jp hl
+    ld a, h                     ; this instruction must not execute
 
   .org $1020
     ld h, $20
     ld l, $10
     jp hl
+    ld a, h                     ; this instruction must not execute
 
   .org $2010
     ld a, $ff

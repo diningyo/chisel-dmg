@@ -254,7 +254,7 @@ class Cpu extends Module {
     RRA      -> List(decode(OP.RRA,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     PREFIXED -> List(decode(OP.PREFIXED, 1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     JPNN     -> List(decode(OP.JP,       4.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    JPHL     -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    JPHL     -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, true.B,  w_dst_reg, w_rp)),
     JPCCNN   -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     JPCCE    -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     JPE      -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -487,7 +487,7 @@ class Cpu extends Module {
     r_regs.f.c := Mux(w_exe_ctrl.op === OP.INC, false.B, w_carry)
   }
 
-  when (w_exe_ctrl.op === OP.JP && r_mcyc_counter === 1.U) {
+  when (w_exe_ctrl.op === OP.JP && r_mcyc_counter <= 1.U) {
     r_regs.pc.write(w_wrbk)
   }
 
