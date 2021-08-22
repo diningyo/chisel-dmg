@@ -24,7 +24,7 @@
 	  ld  l, $01                  ; l = $02
 
     jp $1020
-    ld  a, l                    ; a = $01 this operation must not execute
+    ld  a, l                    ; a = $01 this operation must not be executed
 
   .org $1020
     jp $2010
