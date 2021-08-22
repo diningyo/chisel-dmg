@@ -165,9 +165,9 @@ class Cpu extends Module {
 
   val w_op_code = WireInit(io.mem.rddata)
   val w_exe_ctrl = Wire(new DecodedInst)
-
+  val r_mcyc_counter = RegInit(0.U(3.W))
   val r_invalid_op = dontTouch(RegInit(false.B))
-  when (w_exe_ctrl.op === OP.JP) {
+  when (w_exe_ctrl.op === OP.JP && (w_exe_ctrl.cycle === 1.U || r_mcyc_counter === 1.U)) {
     r_invalid_op := true.B
   }.otherwise {
     r_invalid_op := false.B
@@ -285,7 +285,6 @@ class Cpu extends Module {
     List(decode(OP.NOP, 1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     decodeTable).head
 
-  val r_mcyc_counter = RegInit(0.U(3.W))
   w_running := (r_mcyc_counter =/= 0.U)
   val r_ctrl = Reg(new DecodedInst)
 
@@ -495,7 +494,7 @@ class Cpu extends Module {
     r_regs.f.c := Mux(w_exe_ctrl.op === OP.INC, false.B, w_carry)
   }
 
-  when (w_exe_ctrl.op === OP.JP && r_mcyc_counter <= 1.U) {
+  when (w_exe_ctrl.op === OP.JP && (w_exe_ctrl.cycle === 1.U || r_mcyc_counter === 1.U)) {
     r_regs.pc.write(w_wrbk)
   }
 
