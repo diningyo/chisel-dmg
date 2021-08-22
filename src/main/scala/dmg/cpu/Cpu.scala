@@ -164,6 +164,14 @@ class Cpu extends Module {
   import Instructions._
 
   val w_op_code = WireInit(io.mem.rddata)
+  val w_exe_ctrl = Wire(new DecodedInst)
+
+  val r_invalid_op = dontTouch(RegInit(false.B))
+  when (w_exe_ctrl.op === OP.JP) {
+    r_invalid_op := true.B
+  }.otherwise {
+    r_invalid_op := false.B
+  }
 
   val w_dst_reg = w_op_code(5, 3)
   val w_src_reg = w_op_code(2, 0)
@@ -281,9 +289,9 @@ class Cpu extends Module {
   w_running := (r_mcyc_counter =/= 0.U)
   val r_ctrl = Reg(new DecodedInst)
 
-  val w_exe_ctrl: DecodedInst = Mux(!w_running, w_ctrl, r_ctrl)
+  w_exe_ctrl := Mux(!w_running, w_ctrl, r_ctrl)
 
-  w_op_code := Mux(w_running, 0.U, io.mem.rddata)
+  w_op_code := Mux(r_invalid_op || w_running, 0.U, io.mem.rddata)
 
   // increment PC.
   when (w_exe_ctrl.op === OP.LDANN) {
