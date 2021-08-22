@@ -265,7 +265,7 @@ class Cpu extends Module {
     JPHL     -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, true.B,  w_dst_reg, w_rp)),
     JPCCNN   -> List(decode(OP.JP,       4.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     JRCCE    -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    JRE      -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    JRE      -> List(decode(OP.JR,       3.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     CALLNN   -> List(decode(OP.CALL,     1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     CALLCCNN -> List(decode(OP.CALL,     1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     RET      -> List(decode(OP.RET,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -404,6 +404,8 @@ class Cpu extends Module {
       }
     }.elsewhen (w_exe_ctrl.op === OP.JP) {
       w_wrbk := Cat(r_addr_msb, r_addr_lsb)
+    }.elsewhen (w_exe_ctrl.op === OP.JR) {
+      w_wrbk := r_addr_msb
     }.otherwise {
       w_wrbk := io.mem.rddata
     }
@@ -494,11 +496,18 @@ class Cpu extends Module {
     r_regs.f.c := Mux(w_exe_ctrl.op === OP.INC, false.B, w_carry)
   }
 
-  when (w_exe_ctrl.op === OP.JP && (w_exe_ctrl.cycle === 1.U || r_mcyc_counter === 1.U)) {
-    r_regs.pc.write(w_wrbk)
+  when ((w_exe_ctrl.op === OP.JP || w_exe_ctrl.op === OP.JR) && (w_exe_ctrl.cycle === 1.U || r_mcyc_counter === 1.U)) {
+    when (w_exe_ctrl.op === OP.JR) {
+      // FIXME : remove "- 1.U"
+      r_regs.pc.write((r_regs.pc.read.asSInt + r_addr_lsb.asSInt()).asUInt - 1.U)
+    }.otherwise {
+      r_regs.pc.write(w_wrbk)
+    }
   }
 
   when ((w_exe_ctrl.op === OP.LDANN || w_exe_ctrl.op === OP.JP) && r_mcyc_counter === 3.U) {
+    r_addr_lsb := io.mem.rddata
+  }.elsewhen (w_exe_ctrl.op === OP.JR && r_mcyc_counter === 2.U) {
     r_addr_lsb := io.mem.rddata
   }
 
