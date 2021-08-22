@@ -21,9 +21,10 @@
 	  ld  d, $00                  ; d = $02
     ld  e, $00                  ; e = $02
 	  ld  h, $00                  ; h = $02
-	  ld  l, $00                  ; l = $02
+	  ld  l, $01                  ; l = $02
 
     jp $1020
+    ld  a, l                    ; a = $01 this operation must not execute
 
   .org $1020
     jp $2010
