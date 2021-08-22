@@ -207,8 +207,8 @@ class Cpu extends Module {
     LDADE    -> List(decode(OP.LDARP,    2.U, false.B, false.B, true.B,  false.B,  true.B, A,         DE)),
     LDAHLI   -> List(decode(OP.LDINC,    2.U, false.B, false.B, true.B,  false.B,  true.B, A,         HL)),
     LDAHLD   -> List(decode(OP.LDDEC,    2.U, false.B, false.B, true.B,  false.B,  true.B, A,         HL)),
-    LDBCA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    LDDEA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    LDBCA    -> List(decode(OP.STORE,    2.U, false.B, false.B, true.B,  true.B,  false.B, BC,        A)), // BC/DEはまとめられる？？
+    LDDEA    -> List(decode(OP.STORE,    2.U, false.B, false.B, true.B,  true.B,  false.B, DE,        A)), // BC/DEはまとめられる？？
     LDANN    -> List(decode(OP.LDANN,    4.U, false.B, false.B, true.B,  false.B, false.B, A,         w_src_reg)),
     LDNNA    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     LDHAC    -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -404,6 +404,8 @@ class Cpu extends Module {
       }
     }.elsewhen (w_exe_ctrl.op === OP.JP) {
       w_wrbk := Cat(r_addr_msb, r_addr_lsb)
+    }.elsewhen (w_exe_ctrl.op === OP.STORE) {
+      w_wrbk := r_regs.read(false.B, w_exe_ctrl.src)
     }.elsewhen (w_exe_ctrl.op === OP.JR) {
       w_wrbk := r_addr_msb
     }.otherwise {
@@ -415,7 +417,9 @@ class Cpu extends Module {
   }
 
   // reg writeback
-  val w_en_reg_wrbk = (w_exe_ctrl.op =/= OP.NOP) && (w_exe_ctrl.cycle === 1.U) || (w_running && (r_mcyc_counter === 1.U))
+  val notNeedWrbkOp = Seq(OP.NOP, OP.STORE)
+  val w_need_wrbk = !(Cat(notNeedWrbkOp.map(w_exe_ctrl.op === _)).orR())
+  val w_en_reg_wrbk = w_need_wrbk && ((w_exe_ctrl.cycle === 1.U) || (w_running && (r_mcyc_counter === 1.U)))
 
   when (w_en_reg_wrbk) {
     // FIXME: OP.LDのみに出来そう
@@ -525,10 +529,18 @@ class Cpu extends Module {
     w_addr := Cat(io.mem.rddata, r_addr_lsb)
   }.elsewhen (w_exe_ctrl.op === OP.LDH && r_mcyc_counter === 2.U) {
     w_addr := Cat(0xff.U, io.mem.rddata)
+  }.elsewhen (w_exe_ctrl.op === OP.STORE && r_mcyc_counter === 1.U) {
+    w_addr := r_regs.read(w_exe_ctrl.is_dst_rp, w_exe_ctrl.dst)
   }.otherwise {
     w_addr := r_regs.pc.read()
   }
 
   io.mem.addr := w_addr
-  io.mem.wen := false.B
+
+  when (w_exe_ctrl.op === OP.STORE && r_mcyc_counter === 1.U) {
+    io.mem.wen := true.B
+    io.mem.wrdata := w_wrbk
+  }.otherwise {
+    io.mem.wen := false.B
+  }
 }
