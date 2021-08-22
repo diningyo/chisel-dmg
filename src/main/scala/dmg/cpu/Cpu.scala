@@ -164,6 +164,14 @@ class Cpu extends Module {
   import Instructions._
 
   val w_op_code = WireInit(io.mem.rddata)
+  val w_exe_ctrl = Wire(new DecodedInst)
+  val r_mcyc_counter = RegInit(0.U(3.W))
+  val r_invalid_op = dontTouch(RegInit(false.B))
+  when (w_exe_ctrl.op === OP.JP && (w_exe_ctrl.cycle === 1.U || r_mcyc_counter === 1.U)) {
+    r_invalid_op := true.B
+  }.otherwise {
+    r_invalid_op := false.B
+  }
 
   val w_dst_reg = w_op_code(5, 3)
   val w_src_reg = w_op_code(2, 0)
@@ -254,7 +262,7 @@ class Cpu extends Module {
     RRA      -> List(decode(OP.RRA,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     PREFIXED -> List(decode(OP.PREFIXED, 1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     JPNN     -> List(decode(OP.JP,       4.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
-    JPHL     -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    JPHL     -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, true.B,  w_dst_reg, w_rp)),
     JPCCNN   -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     JPCCE    -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     JPE      -> List(decode(OP.JP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -277,13 +285,12 @@ class Cpu extends Module {
     List(decode(OP.NOP, 1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     decodeTable).head
 
-  val r_mcyc_counter = RegInit(0.U(3.W))
   w_running := (r_mcyc_counter =/= 0.U)
   val r_ctrl = Reg(new DecodedInst)
 
-  val w_exe_ctrl: DecodedInst = Mux(!w_running, w_ctrl, r_ctrl)
+  w_exe_ctrl := Mux(!w_running, w_ctrl, r_ctrl)
 
-  w_op_code := Mux(w_running, 0.U, io.mem.rddata)
+  w_op_code := Mux(r_invalid_op || w_running, 0.U, io.mem.rddata)
 
   // increment PC.
   when (w_exe_ctrl.op === OP.LDANN) {
@@ -487,7 +494,7 @@ class Cpu extends Module {
     r_regs.f.c := Mux(w_exe_ctrl.op === OP.INC, false.B, w_carry)
   }
 
-  when (w_exe_ctrl.op === OP.JP && r_mcyc_counter === 1.U) {
+  when (w_exe_ctrl.op === OP.JP && (w_exe_ctrl.cycle === 1.U || r_mcyc_counter === 1.U)) {
     r_regs.pc.write(w_wrbk)
   }
 

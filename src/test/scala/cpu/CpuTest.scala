@@ -125,6 +125,7 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers with Par
     "170_decr.s"  -> ((c: CpuTestTb) => Inst170DECR(c)),
     "180_daa.s"   -> ((c: CpuTestTb) => Inst180DAA(c)),
     "200_jpnn.s"  -> ((c: CpuTestTb) => Inst200JPNN(c)),
+    "201_jphl.s"  -> ((c: CpuTestTb) => Inst201JPHL(c)),
   )
 
   unitInstructionTests foreach { testInfo =>
