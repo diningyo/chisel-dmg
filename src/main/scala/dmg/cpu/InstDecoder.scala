@@ -156,9 +156,9 @@ object Instructions {
   def JPHL     = BitPat("b11101001") // Jump to HL.
   // CC : branch condition
   def JPCCNN   = BitPat("b110??010") // Conditional (CC) Jump to NN.
-  def JPCCE    = BitPat("b001??000") // Conditional (CC) Jump to E.
   // E : singed_8(PC)
-  def JPE      = BitPat("b00011000") // Unconditional relative Jump to E.
+  def JRCCE    = BitPat("b001??000") // Conditional (CC) Jump to E.
+  def JRE      = BitPat("b00011000") // Unconditional relative Jump to E.
   def CALLNN   = BitPat("b11001101") // Unconditional function call to NN.
   def CALLCCNN = BitPat("b110??100") // Conditional (CC) function call to NN.
   def RET      = BitPat("b11001001") // Unconditional return from function.
