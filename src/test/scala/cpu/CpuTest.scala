@@ -123,6 +123,7 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers with Par
     "140_orar.s"  -> ((c: CpuTestTb) => Inst140ORAR(c)),
     "150_cpar.s"  -> ((c: CpuTestTb) => Inst150CPAR(c)),
     "160_incr.s"  -> ((c: CpuTestTb) => Inst160INCR(c)),
+    "161_incrp.s" -> ((c: CpuTestTb) => Inst161INCRP(c)),
     "170_decr.s"  -> ((c: CpuTestTb) => Inst170DECR(c)),
     "180_daa.s"   -> ((c: CpuTestTb) => Inst180DAA(c)),
     "200_jpnn.s"  -> ((c: CpuTestTb) => Inst200JPNN(c)),
