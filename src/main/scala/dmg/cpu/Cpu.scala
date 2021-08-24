@@ -246,14 +246,14 @@ class Cpu extends Module {
     CPAR     -> List(decode(OP.CP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     CPAN     -> List(decode(OP.CP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     CPAHL    -> List(decode(OP.CP,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
+    INCRP    -> List(decode(OP.INC,      2.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_rp)),
     INCR     -> List(decode(OP.INC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_dst_reg)),
     INCHL    -> List(decode(OP.INC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     DECR     -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_dst_reg)),
     DECHL    -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     DAA      -> List(decode(OP.DAA,      1.U, false.B, false.B, false.B, false.B, false.B, A,         A)),
     ADDHLRP  -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_src_reg)),
-    INCRP    -> List(decode(OP.INC,      1.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_src_reg)),
-    DECRP    -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_src_reg)),
+    DECRP    -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_rp)),
     ADDSPR8  -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, true.B,  true.B,  SP,        w_src_reg)),
     LDHLSPR8 -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, true.B,  true.B,  SP,        w_src_reg)),
     RLCA     -> List(decode(OP.RLCA,     1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -297,6 +297,8 @@ class Cpu extends Module {
     when (r_mcyc_counter =/= 2.U) {
       r_regs.pc.inc
     }
+  }.elsewhen (w_exe_ctrl.op === OP.INC && r_mcyc_counter === 0.U) {
+    r_regs.pc := r_regs.pc
   }.elsewhen (!((w_ctrl.is_mem && (r_mcyc_counter <= 1.U)))) {
     r_regs.pc.inc
   }
@@ -492,7 +494,7 @@ class Cpu extends Module {
     w_en_reg_wrbk &&
     (w_exe_ctrl.op === OP.ADD || w_exe_ctrl.op === OP.SUB || w_exe_ctrl.op === OP.AND ||
       w_exe_ctrl.op === OP.OR || w_exe_ctrl.op === OP.XOR || w_exe_ctrl.op === OP.CP ||
-      w_exe_ctrl.op === OP.INC || w_exe_ctrl.op === OP.DEC || w_ctrl.op === OP.DAA)
+      w_exe_ctrl.op === OP.DEC || w_ctrl.op === OP.DAA)
   ) {
     r_regs.f.z := w_zero
     r_regs.f.n := w_n
