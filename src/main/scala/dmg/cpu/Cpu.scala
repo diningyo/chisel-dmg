@@ -297,7 +297,7 @@ class Cpu extends Module {
     when (r_mcyc_counter =/= 2.U) {
       r_regs.pc.inc
     }
-  }.elsewhen (w_exe_ctrl.op === OP.INC && r_mcyc_counter === 0.U) {
+  }.elsewhen (w_exe_ctrl.op === OP.INC && (w_exe_ctrl.cycle === 2.U) && (r_mcyc_counter === 0.U)) {
     r_regs.pc := r_regs.pc
   }.elsewhen (!((w_ctrl.is_mem && (r_mcyc_counter <= 1.U)))) {
     r_regs.pc.inc
@@ -431,7 +431,7 @@ class Cpu extends Module {
     ) {
       r_regs.write(w_exe_ctrl.is_dst_rp, w_exe_ctrl.dst, w_wrbk)
     // FIXME: ここもALUでまとめられる？？
-    }.elsewhen (w_exe_ctrl.op === OP.ADD || w_exe_ctrl.op === OP.SUB || w_exe_ctrl.op === OP.AND || w_exe_ctrl.op === OP.OR || w_exe_ctrl.op === OP.XOR || w_ctrl.op === OP.DAA) {
+    }.elsewhen (w_exe_ctrl.op === OP.ADD || w_exe_ctrl.op === OP.SUB || w_exe_ctrl.op === OP.AND || w_exe_ctrl.op === OP.OR || w_exe_ctrl.op === OP.XOR || w_exe_ctrl.op === OP.DAA) {
       r_regs.a.write(w_alu_result)
     }.elsewhen (w_exe_ctrl.op === OP.INC || w_exe_ctrl.op === OP.DEC) {
       r_regs.write(w_exe_ctrl.is_dst_rp, w_exe_ctrl.dst, w_alu_result)
@@ -458,7 +458,7 @@ class Cpu extends Module {
     when (w_exe_ctrl.op === OP.DEC) {
       w_carry := false.B
     }.otherwise {
-      when (w_ctrl.op === OP.DAA && r_regs.f.c) {
+      when (w_exe_ctrl.op === OP.DAA && r_regs.f.c) {
         w_carry := true.B
       }.otherwise {
         w_carry := w_alu_result(8)
@@ -491,15 +491,17 @@ class Cpu extends Module {
   }
 
   when (
-    w_en_reg_wrbk &&
+    w_en_reg_wrbk && !w_exe_ctrl.is_dst_rp &&
     (w_exe_ctrl.op === OP.ADD || w_exe_ctrl.op === OP.SUB || w_exe_ctrl.op === OP.AND ||
       w_exe_ctrl.op === OP.OR || w_exe_ctrl.op === OP.XOR || w_exe_ctrl.op === OP.CP ||
-      w_exe_ctrl.op === OP.DEC || w_ctrl.op === OP.DAA)
+      w_exe_ctrl.op === OP.INC || w_exe_ctrl.op === OP.DEC || w_exe_ctrl.op === OP.DAA)
   ) {
     r_regs.f.z := w_zero
     r_regs.f.n := w_n
     r_regs.f.h := w_half_carry
-    r_regs.f.c := Mux(w_exe_ctrl.op === OP.INC, false.B, w_carry)
+    when (!(w_exe_ctrl.op === OP.INC || w_exe_ctrl.op === OP.DEC)) {
+      r_regs.f.c := w_carry
+    }
   }
 
   when ((w_exe_ctrl.op === OP.JP || w_exe_ctrl.op === OP.JR) && (w_exe_ctrl.cycle === 1.U || r_mcyc_counter === 1.U)) {
