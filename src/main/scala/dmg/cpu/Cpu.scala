@@ -253,7 +253,7 @@ class Cpu extends Module {
     DECHL    -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     DAA      -> List(decode(OP.DAA,      1.U, false.B, false.B, false.B, false.B, false.B, A,         A)),
     ADDHLRP  -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_src_reg)),
-    DECRP    -> List(decode(OP.DEC,      1.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_rp)),
+    DECRP    -> List(decode(OP.DEC,      2.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_rp)),
     ADDSPR8  -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, true.B,  true.B,  SP,        w_src_reg)),
     LDHLSPR8 -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, true.B,  true.B,  SP,        w_src_reg)),
     RLCA     -> List(decode(OP.RLCA,     1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -297,7 +297,7 @@ class Cpu extends Module {
     when (r_mcyc_counter =/= 2.U) {
       r_regs.pc.inc
     }
-  }.elsewhen (w_exe_ctrl.op === OP.INC && (w_exe_ctrl.cycle === 2.U) && (r_mcyc_counter === 0.U)) {
+  }.elsewhen (((w_exe_ctrl.op === OP.INC) || (w_exe_ctrl.op === OP.DEC)) && (w_exe_ctrl.cycle === 2.U) && (r_mcyc_counter === 0.U)) {
     r_regs.pc := r_regs.pc
   }.elsewhen (!((w_ctrl.is_mem && (r_mcyc_counter <= 1.U)))) {
     r_regs.pc.inc
