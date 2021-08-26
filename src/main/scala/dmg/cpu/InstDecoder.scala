@@ -115,7 +115,7 @@ object Instructions {
   // 16-bit
   def ADDHLRP  = BitPat("b0???1001") // 16bit Add HL to RP.
   def INCRP    = BitPat("b00??0011") // Increment RP.
-  def DECRP    = BitPat("b0???1010") // Decrement RP.
+  def DECRP    = BitPat("b00??1011") // Decrement RP.
   def ADDSPR8  = BitPat("b11101000") // Add SP to Singed 8-bit.
   def LDHLSPR8 = BitPat("b11111000") // Load from SP + Singed 8-bit to HL.
 
