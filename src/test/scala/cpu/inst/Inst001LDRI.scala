@@ -1,7 +1,7 @@
 import chisel3._
 import chiseltest._
 
-object Inst001LDI extends TestUtil {
+object Inst001LDRI extends TestUtil {
   def apply(implicit dut: CpuTestTb) {
     dut.clock.setTimeout(100)
 

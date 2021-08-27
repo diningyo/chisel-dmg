@@ -106,8 +106,8 @@ class CpuTest extends FlatSpec with ChiselScalatestTester with Matchers with Par
   import BlarggGbTests._
 
   val unitInstructionTests = Seq(
-    "000_ld.s"    -> ((c: CpuTestTb) => Inst000LD(c)),
-    "001_ldi.s"   -> ((c: CpuTestTb) => Inst001LDI(c)),
+    "000_ldrr.s"  -> ((c: CpuTestTb) => Inst000LDRR(c)),
+    "001_ldri.s"  -> ((c: CpuTestTb) => Inst001LDRI(c)),
     "002_ldrhl.s" -> ((c: CpuTestTb) => Inst002LDRHL(c)),
     "003_ldarp.s" -> ((c: CpuTestTb) => Inst003LDARP(c)),
     "004_ldhan.s" -> ((c: CpuTestTb) => Inst004LDHAN(c)),
