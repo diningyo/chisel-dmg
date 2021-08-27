@@ -1,0 +1,37 @@
+import chisel3._
+import org.scalatest._
+import chiseltest._
+
+object Inst102ADDAHLN extends FlatSpec with ChiselScalatestTester with TestUtil {
+  def apply(implicit dut: CpuTestTb) {
+    // test code starts from $0150.
+    dut.clock.step(0x50)
+
+    // skip register initialization.
+    dut.clock.step(0x13)
+
+    // add a, (hl)                ; a = $00 + $01 = $01 / z = 0 / c = 0
+    compareReg(0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x0000, 0x0163, false, false, false, false) // fetch
+    compareReg(0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x0000, 0x0164, false, false, false, false) // read memory
+    compareReg(0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x0000, 0x0164, false, false, false, false) // add
+    compareReg(0xa0, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x0000, 0x0165, false, false, false, false) // check register value
+
+    // ;; check h flag
+    // ld  a, $01
+    // ld  l, $01
+    // add a, (hl)                ; a = $00 + $01 = $01 / z = 0 / c = 0 / h = 1
+    dut.clock.step(2)
+    compareReg(0x01, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x0000, 0x0168, false, false, false, false) // fetch
+    compareReg(0x01, 0x00, 0x00, 0x00, 0x00, 0x20, 0x01, 0x0000, 0x0169, false, false, false, false) // read memory
+    compareReg(0x01, 0x00, 0x00, 0x00, 0x00, 0x20, 0x01, 0x0000, 0x0169, false, false, false, false) // add
+
+    // ;; check z / c flag
+    // ld  l, $02
+    // add a, (hl)                ; a = $00 + $01 = $01 / z = 1 / c = 1 / h = 0
+    dut.clock.step(1)
+    compareReg(0x10, 0x00, 0x00, 0x00, 0x00, 0x20, 0x01, 0x0000, 0x016b, false, false, true,  false) // check register value / fetch
+    compareReg(0x10, 0x00, 0x00, 0x00, 0x00, 0x20, 0x02, 0x0000, 0x016c, false, false, true,  false) // read memory
+    compareReg(0x10, 0x00, 0x00, 0x00, 0x00, 0x20, 0x02, 0x0000, 0x016c, false, false, true,  false) // add
+    compareReg(0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0x02, 0x0000, 0x016d, true,  false, false, true)  // check register value
+  }
+}

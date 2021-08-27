@@ -222,9 +222,9 @@ class Cpu extends Module {
     LDSPHL   -> List(decode(OP.LD,       1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     PUSHRP   -> List(decode(OP.PUSH,     1.U, false.B, false.B, false.B, true.B,  true.B,  w_dst_reg, w_rp)),
     POPRP    -> List(decode(OP.POP,      1.U, false.B, false.B, false.B, true.B,  true.B,  w_rp,      w_src_reg)),
+    ADDAHL   -> List(decode(OP.ADD,      2.U, false.B, false.B, true.B,  false.B, true.B,  A,         HL)),
     ADDAR    -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     ADDAN    -> List(decode(OP.ADD,      2.U, false.B, true.B,  false.B, false.B, false.B, A,         w_src_reg)),
-    ADDAHL   -> List(decode(OP.ADD,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     ADCAR    -> List(decode(OP.ADC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     ADCAN    -> List(decode(OP.ADC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
     ADCAHL   -> List(decode(OP.ADC,      1.U, false.B, false.B, false.B, false.B, false.B, w_dst_reg, w_src_reg)),
@@ -297,6 +297,8 @@ class Cpu extends Module {
     when (r_mcyc_counter =/= 2.U) {
       r_regs.pc.inc
     }
+  }.elsewhen ((w_exe_ctrl.op === OP.ADD && w_exe_ctrl.is_mem) && (w_exe_ctrl.cycle === 2.U) && (r_mcyc_counter === 0.U)) {
+    r_regs.pc := r_regs.pc
   }.elsewhen (((w_exe_ctrl.op === OP.INC) || (w_exe_ctrl.op === OP.DEC)) && (w_exe_ctrl.cycle === 2.U) && (r_mcyc_counter === 0.U)) {
     r_regs.pc := r_regs.pc
   }.elsewhen (!((w_ctrl.is_mem && (r_mcyc_counter <= 1.U)))) {
@@ -527,7 +529,7 @@ class Cpu extends Module {
 
   when (w_ctrl.op === OP.LDRHL || w_ctrl.op === OP.LDINC || w_ctrl.op === OP.LDDEC) {
     w_addr := r_regs.read_hl
-  }.elsewhen (w_ctrl.op === OP.LDARP) {
+  }.elsewhen (w_ctrl.op === OP.LDARP || (w_exe_ctrl.op === OP.ADD && w_exe_ctrl.is_mem && r_mcyc_counter =/= 1.U)) {
     w_addr := r_regs.read(true.B, w_ctrl.src)
   }.elsewhen (w_exe_ctrl.op === OP.LDANN && r_mcyc_counter === 2.U) {
     w_addr := Cat(io.mem.rddata, r_addr_lsb)
