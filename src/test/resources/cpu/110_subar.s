@@ -57,7 +57,7 @@
     add a, b                    ; clear flag
     ld  a, $10
     ld  b, $20
-    sub a, $20                  ; a - b = $10 - $20 = $f0 / c = 1
+    sub a, b                    ; a - b = $10 - $20 = $f0 / c = 1
 
     ;;  check z / h / c flag
     ld  a, $10
@@ -65,4 +65,4 @@
     add a, b                    ; clear flag
     ld  a, $00
     ld  b, $01
-    sub a, $01                  ; a - b = $00 - $01 = $ff / z = 1 / h = 1 / c = 1
+    sub a, b                    ; a - b = $00 - $01 = $ff / z = 1 / h = 1 / c = 1
