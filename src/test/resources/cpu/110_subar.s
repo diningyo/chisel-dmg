@@ -7,7 +7,22 @@
 	.romBankSize   $4000 ; generates $8000 byte ROM
 	.romBanks      2
 
-	.org $100
+	.org $150
+    ;; initialize flag register
+    ld  a, $10
+    ld  b, $01
+    add a, b                    ; clear flag
+
+    ;; initialize register
+    ld  a, $00
+    ld  b, $00
+    ld  c, $00
+	  ld  d, $00
+    ld  e, $00
+	  ld  h, $00
+	  ld  l, $00
+
+;;; test start
     ld  a, $ff                 ; a  = $ff
     ld  b, $01                 ; b  = $01
     ld  c, $02                 ; c  = $02
@@ -23,22 +38,31 @@
     sub a, l                   ; a  = $f0 - $06 = $ea / h = 0 -> 1
     sub a, a                   ; a  = $ea - $ea = $00
 
-    ;; check z/c flag
-    ld  a, $00
-    ld  b, $00
-    sub a, b                   ; a = $00 + $00 = $00 / z = 1 / c = 0
+    ;; check z flag
+    ld  a, $01
+    ld  b, $01
+    sub a, b                   ; a - b = $01 - $01 = $00 / z = 1 / c = 0
 
-;    ;; clear z/c flag
-;    sub a, c                   ; a = $00 + $02 = $02 / z = 0 / c = 0
-;
-;    ld  a, $ff
-;    ld  b, $01
-;    sub a, b                   ; a = $ff + $01 = $00 / z = 1 / c = 1
-;
-;    ;; clear z/c flag
-;    sub a, c                   ; a = $00 + $02 = $02 / z = 0 / c = 0
-;
-;    ;;
-;    ld  a, $0f
-;    ld  b, $01
-;    sub a, b                   ; a = $0f + $01 = $10 / h = 1
+    ;; check h flag
+    ld  a, $10
+    ld  b, $01
+    add a, b                   ; clear flag
+    ld  a, $10
+    ld  b, $01
+    sub a, b                   ; a - b = $10 - $01 = $0f / h = 1
+
+    ;;  check c flag
+    ld  a, $10
+    ld  b, $01
+    add a, b                    ; clear flag
+    ld  a, $10
+    ld  b, $20
+    sub a, $20                  ; a - b = $10 - $20 = $f0 / c = 1
+
+    ;;  check z / h / c flag
+    ld  a, $10
+    ld  b, $01
+    add a, b                    ; clear flag
+    ld  a, $00
+    ld  b, $01
+    sub a, $01                  ; a - b = $00 - $01 = $ff / z = 1 / h = 1 / c = 1
