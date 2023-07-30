@@ -40,7 +40,7 @@ jobs:
           cd ccache
           git checkout -b v4.3 refs/tags/v4.8.2
           mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache ..
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache/v4.8.2 ..
           make -j && make install
           export PATH=/home/runner/tools/ccache/v4.8.2/bin:$PATH
           cd ../../        
