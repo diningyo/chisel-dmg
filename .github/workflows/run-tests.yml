@@ -105,5 +105,5 @@ jobs:
 
       - name: Run test
         run: |
-           export PATH=/home/runner/tools/sbt/bin:/home/runner/tools/ccache/bin:/home/runner/tools/verilator/bin:/home/runner/tools/wla-dx/bin:$PATH
+           export PATH=/home/runner/tools/sbt/bin:/home/runner/tools/ccache/v4.8.2/bin:/home/runner/tools/verilator/v5.002/bin:/home/runner/tools/wla-dx/bin:$PATH
            sbt "testOnly CpuTest -- -P2"
