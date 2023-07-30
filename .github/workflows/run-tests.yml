@@ -23,9 +23,9 @@ jobs:
         with:
           path: |
             ~/ccache
-            ~/verilator-4.210
-            ~/tools/ccache
-            ~/tools/verilator
+            ~/verilator
+            ~/tools/ccache/v4.8.2
+            ~/tools/verilator/v5.002
           key: ${{ runner.os }}-verilator
 
       - name: Build and Install Verilator
@@ -42,13 +42,13 @@ jobs:
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache ..
           make -j && make install
-          export PATH=/home/runner/tools/ccache/bin:$PATH
+          export PATH=/home/runner/tools/ccache/v4.8.2/bin:$PATH
           cd ../../        
           git clone https://github.com/verilator/verilator.git
           cd verilator
           git checkout -b v5.002 refs/tags/v5.002
           autoconf
-          ./configure --prefix=/home/runner/tools/verilator
+          ./configure --prefix=/home/runner/tools/verilator/v5.002
           make -j 3
           make install
 
