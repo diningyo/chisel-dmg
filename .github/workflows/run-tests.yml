@@ -31,18 +31,7 @@ jobs:
       - name: Build and Install Verilator
         if: steps.cache-verilator.outputs.cache-hit != 'true'
         run: |
-          sudo apt-get install git perl python3 make autoconf g++ flex bison cmake
-          sudo apt-get install libfl2 libfl-dev
-          sudo apt-get install zlibc zlib1g zlib1g-dev
-          sudo apt-get install libzstd-dev libhiredis-dev
-          git clone https://github.com/ccache/ccache.git
-          cd ccache
-          git checkout -b v4.3 refs/tags/v4.3
-          mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache ..
-          make -j && make install
-          export PATH=/home/runner/tools/ccache/bin:$PATH
-          cd ../../
+          sudo apt-get install git perl python3 make autoconf g++ flex bison cmake ccache
           git clone https://github.com/verilator/verilator.git
           cd verilator
           git checkout -b v4.210 refs/tags/v4.210
