@@ -38,7 +38,7 @@ jobs:
           sudo apt-get install libzstd-dev libhiredis-dev
           git clone https://github.com/ccache/ccache.git
           cd ccache
-          git checkout -b v4.3 refs/tags/v4.3
+          git checkout -b v4.3 refs/tags/v4.8.2
           mkdir build && cd build
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache ..
           make -j && make install
@@ -46,7 +46,7 @@ jobs:
           cd ../../        
           git clone https://github.com/verilator/verilator.git
           cd verilator
-          git checkout -b v4.210 refs/tags/v4.210
+          git checkout -b v5.002 refs/tags/v5.002
           autoconf
           ./configure --prefix=/home/runner/tools/verilator
           make -j 3
