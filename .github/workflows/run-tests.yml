@@ -8,9 +8,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Cache SBT
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.ivy2/cache
@@ -19,7 +19,7 @@ jobs:
 
       - name: Cache verilator
         id: cache-verilator
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/ccache
@@ -54,7 +54,7 @@ jobs:
 
       - name: Cache WLA DX
         id: cache-wla-dx
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/wla-dx
@@ -75,7 +75,7 @@ jobs:
 
       - name: Cache sbt
         id: cache-sbt
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/sbt-1.5.5.tgz
@@ -91,7 +91,7 @@ jobs:
 
       - name: Cache test data
         id: cache-test-data
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/work/chisel-dmg/chisel-dmg/src/test/resources/cpu/*.gb.hex*
