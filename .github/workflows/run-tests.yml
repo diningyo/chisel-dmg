@@ -3,6 +3,8 @@ name: Chisel-test
 on: [push]
 
 env:
+  CCACHE_VERSION: 4.8.2
+  VERILATOR_VERSION: 5.002
   SBT_VERSION: 1.9.3
 
 jobs:
@@ -25,8 +27,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/tools/ccache/v4.8.2
-            ~/tools/verilator/v5.002
+            ~/tools/ccache/v${CCACHE_VERSION}
+            ~/tools/verilator/v${VERILATOR_VERSION}
           key: ${{ runner.os }}-verilator
 
       - name: Build and Install Verilator
@@ -39,17 +41,17 @@ jobs:
           sudo apt-get install libzstd-dev libhiredis-dev
           git clone https://github.com/ccache/ccache.git
           cd ccache
-          git checkout -b v4.3 refs/tags/v4.8.2
+          git checkout -b v${CCACHE_VERSION} refs/tags/v${CCACHE_VERSION}
           mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache/v4.8.2 ..
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache/v${CCACHE_VERSION} ..
           make -j && make install
-          export PATH=/home/runner/tools/ccache/v4.8.2/bin:$PATH
+          export PATH=/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:$PATH
           cd ../../        
           git clone https://github.com/verilator/verilator.git
           cd verilator
-          git checkout -b v5.002 refs/tags/v5.002
+          git checkout -b v${VERILATOR_VERSION} refs/tags/v${VERILATOR_VERSION}
           autoconf
-          ./configure --prefix=/home/runner/tools/verilator/v5.002
+          ./configure --prefix=/home/runner/tools/verilator/v${VERILATOR_VERSION}
           make -j 3
           make install
 
@@ -79,16 +81,16 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/tools/sbt/$SBT_VERSION
+            ~/tools/sbt/${SBT_VERSION}
           key: ${{ runner.os }}-sbt
 
       - name: Install sbt
         if: steps.cache-sbt.outputs.cache-hit != 'true'
         run: |
-          wget https://github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.tgz
-          tar xf sbt-$SBT_VERSION.tgz
-          mkdir -p tools/sbt/v$SBT_VERSION
-          mv sbt tools/sbt/v$SBT_VERSION
+          wget https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz
+          tar xf sbt-${SBT_VERSION}.tgz
+          mkdir -p tools/sbt/v${SBT_VERSION}
+          mv sbt tools/sbt/v${SBT_VERSION}
 
       - name: Cache test data
         id: cache-test-data
@@ -101,10 +103,10 @@ jobs:
       - name: Build test data
         if: steps.cache-test-data.outputs.cache-hit != 'true'
         run: |
-           export PATH=/home/runner/tools/sbt/v$SBT_VERSION/bin:/home/runner/tools/wla-dx/bin:$PATH
+           export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
            sbt "convertBin2Hex"
 
       - name: Run test
         run: |
-           export PATH=/home/runner/tools/sbt/v$SBT_VERSION/bin:/home/runner/tools/ccache/v4.8.2/bin:/home/runner/tools/verilator/v5.002/bin:/home/runner/tools/wla-dx/bin:$PATH
+           export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:/home/runner/tools/verilator/v${VERILATOR_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
            sbt "testOnly CpuTest -- -P2"
