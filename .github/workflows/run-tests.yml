@@ -2,6 +2,9 @@ name: Chisel-test
 
 on: [push]
 
+env:
+  SBT_VERSION: 1.9.3
+
 jobs:
   build:
 
@@ -22,8 +25,6 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/ccache
-            ~/verilator
             ~/tools/ccache/v4.8.2
             ~/tools/verilator/v5.002
           key: ${{ runner.os }}-verilator
@@ -78,16 +79,16 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ~/sbt-1.5.5.tgz
-            ~/tools/sbt
+            ~/tools/sbt/$SBT_VERSION
           key: ${{ runner.os }}-sbt
 
       - name: Install sbt
         if: steps.cache-sbt.outputs.cache-hit != 'true'
         run: |
-          wget https://github.com/sbt/sbt/releases/download/v1.5.5/sbt-1.5.5.tgz
-          tar xf sbt-1.5.5.tgz
-          mv sbt tools
+          wget https://github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.tgz
+          tar xf sbt-$SBT_VERSION.tgz
+          mkdir -p tools/sbt/v$SBT_VERSION
+          mv sbt tools/sbt/v$SBT_VERSION
 
       - name: Cache test data
         id: cache-test-data
@@ -100,10 +101,10 @@ jobs:
       - name: Build test data
         if: steps.cache-test-data.outputs.cache-hit != 'true'
         run: |
-           export PATH=/home/runner/tools/sbt/bin:/home/runner/tools/wla-dx/bin:$PATH
+           export PATH=/home/runner/tools/sbt/v$SBT_VERSION/bin:/home/runner/tools/wla-dx/bin:$PATH
            sbt "convertBin2Hex"
 
       - name: Run test
         run: |
-           export PATH=/home/runner/tools/sbt/bin:/home/runner/tools/ccache/v4.8.2/bin:/home/runner/tools/verilator/v5.002/bin:/home/runner/tools/wla-dx/bin:$PATH
+           export PATH=/home/runner/tools/sbt/v$SBT_VERSION/bin:/home/runner/tools/ccache/v4.8.2/bin:/home/runner/tools/verilator/v5.002/bin:/home/runner/tools/wla-dx/bin:$PATH
            sbt "testOnly CpuTest -- -P2"
