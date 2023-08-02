@@ -14,13 +14,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - name: Cache SBT
+      - name: Cache SBT library
         uses: actions/cache@v3
         with:
           path: |
             ~/.ivy2/cache
             ~/.sbt
-          key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
+          key: ${{ runner.os }}-sbt-libs-${{ hashFiles('**/build.sbt') }}
 
       - name: Cache verilator
         id: cache-verilator
