@@ -28,7 +28,7 @@ jobs:
         with:
           path: |
             ~/tools/ccache/v${{ env.CCACHE_VERSION }}
-          key: ${{ runner.os }}-ccache
+          key: ${{ runner.os }}-ccache-v${{ env.CCACHE_VERSION }}
 
       - name: Build and Install Ccache
         if: steps.cache-cchase.outputs.cache-hit != 'true'
@@ -46,91 +46,90 @@ jobs:
           make -j && make install
           export PATH=/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:$PATH
 
-#      - name: Cache verilator
-#        id: cache-verilator
-#        uses: actions/cache@v3
-#        with:
-#          path: |
-#            ~/tools/ccache/v${CCACHE_VERSION}
-#            ~/tools/verilator/v${VERILATOR_VERSION}
-#          key: ${{ runner.os }}-verilator
-#
-#      - name: Build and Install Verilator
-#        if: steps.cache-verilator.outputs.cache-hit != 'true'
-#        run: |
-#          sudo apt-get update
-#          sudo apt-get install git perl python3 make autoconf g++ flex bison cmake
-#          sudo apt-get install libfl2 libfl-dev
-#          sudo apt-get install zlib1g zlib1g-dev
-#          sudo apt-get install libzstd-dev libhiredis-dev
-#          git clone https://github.com/ccache/ccache.git
-#          cd ccache
-#          git checkout -b v${CCACHE_VERSION} refs/tags/v${CCACHE_VERSION}
-#          mkdir build && cd build
-#          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache/v${CCACHE_VERSION} ..
-#          make -j && make install
-#          export PATH=/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:$PATH
-#          cd ../../        
-#          git clone https://github.com/verilator/verilator.git
-#          cd verilator
-#          git checkout -b v${VERILATOR_VERSION} refs/tags/v${VERILATOR_VERSION}
-#          autoconf
-#          ./configure --prefix=/home/runner/tools/verilator/v${VERILATOR_VERSION}
-#          make -j 3
-#          make install
-#
-#      - name: Cache WLA DX
-#        id: cache-wla-dx
-#        uses: actions/cache@v3
-#        with:
-#          path: |
-#            ~/wla-dx
-#            ~/tools/wla-dx
-#          key: ${{ runner.os }}-wla-dx
-#
-#      - name: Build and Install WLA DX
-#        if: steps.cache-wla-dx.outputs.cache-hit != 'true'
-#        run: |
-#          sudo apt install cmake
-#          git clone https://github.com/vhelin/wla-dx
-#          cd wla-dx
-#          git checkout -b v10.0 refs/tags/v10.0
-#          mkdir build && cd build # Create building directory
-#          cmake .. -DCMAKE_INSTALL_PREFIX=/home/runner/tools/wla-dx
-#          cmake --build . --config Release
-#          cmake -P cmake_install.cmake
-#
-#      - name: Cache sbt
-#        id: cache-sbt
-#        uses: actions/cache@v3
-#        with:
-#          path: |
-#            ~/tools/sbt/${SBT_VERSION}
-#          key: ${{ runner.os }}-sbt
-#
-#      - name: Install sbt
-#        if: steps.cache-sbt.outputs.cache-hit != 'true'
-#        run: |
-#          wget https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz
-#          tar xf sbt-${SBT_VERSION}.tgz
-#          mkdir -p tools/sbt/v${SBT_VERSION}
-#          mv sbt tools/sbt/v${SBT_VERSION}
-#
-#      - name: Cache test data
-#        id: cache-test-data
-#        uses: actions/cache@v3
-#        with:
-#          path: |
-#            ~/work/chisel-dmg/chisel-dmg/src/test/resources/cpu/*.gb.hex*
-#          key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.s') }}
-#
-#      - name: Build test data
-#        if: steps.cache-test-data.outputs.cache-hit != 'true'
-#        run: |
-#           export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
-#           sbt "convertBin2Hex"
-#
-#      - name: Run test
-#        run: |
-#           export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:/home/runner/tools/verilator/v${VERILATOR_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
-#           sbt "testOnly CpuTest -- -P2"
+      - name: Cache verilator
+        id: cache-verilator
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/verilator/v${{ env.VERILATOR_VERSION }}
+          key: ${{ runner.os }}-verilator-v${{ env.VERILATOR_VERSION }}
+
+      - name: Build and Install Verilator
+        if: steps.cache-verilator.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install git perl python3 make autoconf g++ flex bison cmake
+          sudo apt-get install libfl2 libfl-dev
+          sudo apt-get install zlib1g zlib1g-dev
+          sudo apt-get install libzstd-dev libhiredis-dev
+          git clone https://github.com/ccache/ccache.git
+          cd ccache
+          git checkout -b v${CCACHE_VERSION} refs/tags/v${CCACHE_VERSION}
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache/v${CCACHE_VERSION} ..
+          make -j && make install
+          export PATH=/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:$PATH
+          cd ../../        
+          git clone https://github.com/verilator/verilator.git
+          cd verilator
+          git checkout -b v${VERILATOR_VERSION} refs/tags/v${VERILATOR_VERSION}
+          autoconf
+          ./configure --prefix=/home/runner/tools/verilator/v${VERILATOR_VERSION}
+          make -j 3
+          make install
+
+      - name: Cache WLA DX
+        id: cache-wla-dx
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/wla-dx
+            ~/tools/wla-dx
+          key: ${{ runner.os }}-wla-dx
+
+      - name: Build and Install WLA DX
+        if: steps.cache-wla-dx.outputs.cache-hit != 'true'
+        run: |
+          sudo apt install cmake
+          git clone https://github.com/vhelin/wla-dx
+          cd wla-dx
+          git checkout -b v10.0 refs/tags/v10.0
+          mkdir build && cd build # Create building directory
+          cmake .. -DCMAKE_INSTALL_PREFIX=/home/runner/tools/wla-dx
+          cmake --build . --config Release
+          cmake -P cmake_install.cmake
+
+      - name: Cache sbt
+        id: cache-sbt
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/sbt/v${{ env.SBT_VERSION }}
+          key: ${{ runner.os }}-sbt-v${{ env.SBT_VERSION }}
+
+      - name: Install sbt
+        if: steps.cache-sbt.outputs.cache-hit != 'true'
+        run: |
+          wget https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz
+          tar xf sbt-${SBT_VERSION}.tgz
+          mkdir -p tools/sbt/v${SBT_VERSION}
+          mv sbt tools/sbt/v${SBT_VERSION}
+
+      - name: Cache test data
+        id: cache-test-data
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/work/chisel-dmg/chisel-dmg/src/test/resources/cpu/*.gb.hex*
+          key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.s') }}
+
+      - name: Build test data
+        if: steps.cache-test-data.outputs.cache-hit != 'true'
+        run: |
+           export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
+           sbt "convertBin2Hex"
+
+      - name: Run test
+        run: |
+           export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:/home/runner/tools/verilator/v${VERILATOR_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
+           sbt "testOnly CpuTest -- -P2"
