@@ -7,7 +7,6 @@ object IfuData {
   val initPC = 100.U(16.W)
 }
 
-
 class Ifu extends Module {
   val io = IO(new Bundle {
     val mem = new MemIO()

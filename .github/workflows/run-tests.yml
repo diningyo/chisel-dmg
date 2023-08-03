@@ -8,53 +8,9 @@ env:
   SBT_VERSION: 1.9.3
 
 jobs:
-  build:
-
+  install-wla-dx:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v3
-      - name: Cache SBT
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.sbt
-          key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
-
-      - name: Cache verilator
-        id: cache-verilator
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/tools/ccache/v${CCACHE_VERSION}
-            ~/tools/verilator/v${VERILATOR_VERSION}
-          key: ${{ runner.os }}-verilator
-
-      - name: Build and Install Verilator
-        if: steps.cache-verilator.outputs.cache-hit != 'true'
-        run: |
-          sudo apt-get update
-          sudo apt-get install git perl python3 make autoconf g++ flex bison cmake
-          sudo apt-get install libfl2 libfl-dev
-          sudo apt-get install zlib1g zlib1g-dev
-          sudo apt-get install libzstd-dev libhiredis-dev
-          git clone https://github.com/ccache/ccache.git
-          cd ccache
-          git checkout -b v${CCACHE_VERSION} refs/tags/v${CCACHE_VERSION}
-          mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache/v${CCACHE_VERSION} ..
-          make -j && make install
-          export PATH=/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:$PATH
-          cd ../../        
-          git clone https://github.com/verilator/verilator.git
-          cd verilator
-          git checkout -b v${VERILATOR_VERSION} refs/tags/v${VERILATOR_VERSION}
-          autoconf
-          ./configure --prefix=/home/runner/tools/verilator/v${VERILATOR_VERSION}
-          make -j 3
-          make install
-
       - name: Cache WLA DX
         id: cache-wla-dx
         uses: actions/cache@v3
@@ -63,7 +19,7 @@ jobs:
             ~/wla-dx
             ~/tools/wla-dx
           key: ${{ runner.os }}-wla-dx
-
+          
       - name: Build and Install WLA DX
         if: steps.cache-wla-dx.outputs.cache-hit != 'true'
         run: |
@@ -76,20 +32,105 @@ jobs:
           cmake --build . --config Release
           cmake -P cmake_install.cmake
 
+  install-ccache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install libiredis
+        run: |
+          sudo apt-get update
+          sudo apt-get install libhiredis-dev
+
+      - name: Cache ccache
+        id: cache-ccache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/ccache/v${{ env.CCACHE_VERSION }}
+          key: ${{ runner.os }}-ccache-v${{ env.CCACHE_VERSION }}
+
+      - name: Build and Install ccache
+        if: steps.cache-ccache.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/ccache/ccache.git
+          cd ccache
+          git checkout -b v${CCACHE_VERSION} refs/tags/v${CCACHE_VERSION}
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache/v${CCACHE_VERSION} ..
+          make -j && make install
+          export PATH=/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:$PATH
+
+  install-simulator:
+    needs: install-ccache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install libiredis
+        run: |
+          sudo apt-get update
+          sudo apt-get install libhiredis-dev
+
+      - name: Cache verilator
+        id: cache-verilator
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/verilator/v${{ env.VERILATOR_VERSION }}
+            ~/tools/ccache/v${{ env.CCACHE_VERSION }}
+          key: ${{ runner.os }}-verilator-v${{ env.VERILATOR_VERSION }}
+
+      - name: Build and Install Verilator
+        if: steps.cache-verilator.outputs.cache-hit != 'true'
+        run: |
+          export PATH=/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:$PATH
+          sudo apt-get install git perl python3 make autoconf g++ flex bison cmake
+          sudo apt-get install libfl2 libfl-dev
+          sudo apt-get install zlib1g zlib1g-dev
+          sudo apt-get install libzstd-dev
+          export PATH=/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:$PATH
+          cd ../../        
+          git clone https://github.com/verilator/verilator.git
+          cd verilator
+          git checkout -b v${VERILATOR_VERSION} refs/tags/v${VERILATOR_VERSION}
+          autoconf
+          ./configure --prefix=/home/runner/tools/verilator/v${VERILATOR_VERSION}
+          make -j 3
+          make install
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [install-simulator, install-wla-dx]
+    steps:
+      - uses: actions/checkout@v3
       - name: Cache sbt
         id: cache-sbt
         uses: actions/cache@v3
         with:
           path: |
-            ~/tools/sbt/${SBT_VERSION}
-          key: ${{ runner.os }}-sbt
+            ~/tools/sbt/v${{ env.SBT_VERSION }}
+          key: ${{ runner.os }}-sbt-v${{ env.SBT_VERSION }}
+
+      - name: Cache ccache
+        id: cache-ccache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/ccache/v${{ env.CCACHE_VERSION }}
+          key: ${{ runner.os }}-ccache-v${{ env.CCACHE_VERSION }}
+
+      - name: Cache verilator
+        id: cache-verilator
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/verilator/v${{ env.VERILATOR_VERSION }}
+            ~/tools/ccache/v${{ env.CCACHE_VERSION }}
+          key: ${{ runner.os }}-verilator-v${{ env.VERILATOR_VERSION }}
 
       - name: Install sbt
         if: steps.cache-sbt.outputs.cache-hit != 'true'
         run: |
           wget https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz
           tar xf sbt-${SBT_VERSION}.tgz
-          mkdir -p tools/sbt/v${SBT_VERSION}
+          mkdir -p tools/sbt
           mv sbt tools/sbt/v${SBT_VERSION}
 
       - name: Cache test data
@@ -108,5 +149,7 @@ jobs:
 
       - name: Run test
         run: |
-           export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:/home/runner/tools/verilator/v${VERILATOR_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
-           sbt "testOnly CpuTest -- -P2"
+          sudo apt-get update
+          sudo apt-get install libhiredis-dev        
+          export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:/home/runner/tools/verilator/v${VERILATOR_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
+          sbt "testOnly CpuTest -- -P2"
