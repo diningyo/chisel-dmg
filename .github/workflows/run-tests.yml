@@ -149,5 +149,7 @@ jobs:
 
       - name: Run test
         run: |
-           export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:/home/runner/tools/verilator/v${VERILATOR_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
-           sbt "testOnly CpuTest -- -P2"
+          sudo apt-get update
+          sudo apt-get install libhiredis-dev        
+          export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:/home/runner/tools/verilator/v${VERILATOR_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
+          sbt "testOnly CpuTest -- -P2"
