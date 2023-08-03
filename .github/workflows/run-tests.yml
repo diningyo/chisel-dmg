@@ -8,7 +8,7 @@ env:
   SBT_VERSION: 1.9.3
 
 jobs:
-  install-simulator:
+  install-ccache:
     runs-on: ubuntu-latest
     steps:
       - name: Install libiredis
@@ -34,15 +34,16 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache/v${CCACHE_VERSION} ..
           make -j && make install
           export PATH=/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:$PATH
-          cd ../../        
-          git clone https://github.com/verilator/verilator.git
-          cd verilator
-          git checkout -b v${VERILATOR_VERSION} refs/tags/v${VERILATOR_VERSION}
-          autoconf
-          ./configure --prefix=/home/runner/tools/verilator/v${VERILATOR_VERSION}
-          make -j 3
-          make install
-        
+
+  install-simulator:
+    needs: install-ccache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install libiredis
+        run: |
+          sudo apt-get update
+          sudo apt-get install libhiredis-dev
+
       - name: Cache verilator
         id: cache-verilator
         uses: actions/cache@v3
@@ -55,6 +56,7 @@ jobs:
       - name: Build and Install Verilator
         if: steps.cache-verilator.outputs.cache-hit != 'true'
         run: |
+          export PATH=/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:$PATH
           sudo apt-get install git perl python3 make autoconf g++ flex bison cmake
           sudo apt-get install libfl2 libfl-dev
           sudo apt-get install zlib1g zlib1g-dev
