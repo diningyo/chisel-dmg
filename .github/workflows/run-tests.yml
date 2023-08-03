@@ -108,6 +108,23 @@ jobs:
             ~/tools/sbt/v${{ env.SBT_VERSION }}
           key: ${{ runner.os }}-sbt-v${{ env.SBT_VERSION }}
 
+      - name: Cache ccache
+        id: cache-ccache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/ccache/v${{ env.CCACHE_VERSION }}
+          key: ${{ runner.os }}-ccache-v${{ env.CCACHE_VERSION }}
+
+      - name: Cache verilator
+        id: cache-verilator
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/verilator/v${{ env.VERILATOR_VERSION }}
+            ~/tools/ccache/v${{ env.CCACHE_VERSION }}
+          key: ${{ runner.os }}-verilator-v${{ env.VERILATOR_VERSION }}
+
       - name: Install sbt
         if: steps.cache-sbt.outputs.cache-hit != 'true'
         run: |
