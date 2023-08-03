@@ -8,6 +8,30 @@ env:
   SBT_VERSION: 1.9.3
 
 jobs:
+  install-wla-dx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache WLA DX
+        id: cache-wla-dx
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/wla-dx
+            ~/tools/wla-dx
+          key: ${{ runner.os }}-wla-dx
+          
+      - name: Build and Install WLA DX
+        if: steps.cache-wla-dx.outputs.cache-hit != 'true'
+        run: |
+          sudo apt install cmake
+          git clone https://github.com/vhelin/wla-dx
+          cd wla-dx
+          git checkout -b v10.0 refs/tags/v10.0
+          mkdir build && cd build # Create building directory
+          cmake .. -DCMAKE_INSTALL_PREFIX=/home/runner/tools/wla-dx
+          cmake --build . --config Release
+          cmake -P cmake_install.cmake
+
   install-ccache:
     runs-on: ubuntu-latest
     steps:
@@ -39,6 +63,7 @@ jobs:
     needs: install-ccache
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: Install libiredis
         run: |
           sudo apt-get update
@@ -70,30 +95,6 @@ jobs:
           ./configure --prefix=/home/runner/tools/verilator/v${VERILATOR_VERSION}
           make -j 3
           make install
-
-  install-wla-dx:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Cache WLA DX
-        id: cache-wla-dx
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/wla-dx
-            ~/tools/wla-dx
-          key: ${{ runner.os }}-wla-dx
-          
-      - name: Build and Install WLA DX
-        if: steps.cache-wla-dx.outputs.cache-hit != 'true'
-        run: |
-          sudo apt install cmake
-          git clone https://github.com/vhelin/wla-dx
-          cd wla-dx
-          git checkout -b v10.0 refs/tags/v10.0
-          mkdir build && cd build # Create building directory
-          cmake .. -DCMAKE_INSTALL_PREFIX=/home/runner/tools/wla-dx
-          cmake --build . --config Release
-          cmake -P cmake_install.cmake
 
   build:
     runs-on: ubuntu-latest
