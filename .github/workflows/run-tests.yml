@@ -9,7 +9,6 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -22,36 +21,13 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-sbt-libs-${{ hashFiles('**/build.sbt') }}
 
-      - name: Cache ccache
-        id: cache-cchase
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/tools/ccache/v${{ env.CCACHE_VERSION }}
-          key: ${{ runner.os }}-ccache-v${{ env.CCACHE_VERSION }}
-
-      - name: Build and Install Ccache
-        if: steps.cache-cchase.outputs.cache-hit != 'true'
-        run: |
-          sudo apt-get update
-          sudo apt-get install git perl python3 make autoconf g++ flex bison cmake
-          sudo apt-get install libfl2 libfl-dev
-          sudo apt-get install zlib1g zlib1g-dev
-          sudo apt-get install libzstd-dev libhiredis-dev
-          git clone https://github.com/ccache/ccache.git
-          cd ccache
-          git checkout -b v${CCACHE_VERSION} refs/tags/v${CCACHE_VERSION}
-          mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache/v${CCACHE_VERSION} ..
-          make -j && make install
-          export PATH=/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:$PATH
-
       - name: Cache verilator
         id: cache-verilator
         uses: actions/cache@v3
         with:
           path: |
             ~/tools/verilator/v${{ env.VERILATOR_VERSION }}
+            ~/tools/ccache/v${{ env.CCACHE_VERSION }}
           key: ${{ runner.os }}-verilator-v${{ env.VERILATOR_VERSION }}
 
       - name: Build and Install Verilator
