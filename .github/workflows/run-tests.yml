@@ -95,9 +95,55 @@ jobs:
           make -j 3
           make install
 
-  build:
+  install-sbt:
     runs-on: ubuntu-latest
-    needs: [install-simulator, install-wla-dx]
+    steps:
+      - name: Cache sbt
+        id: cache-sbt
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/sbt/v${{ env.SBT_VERSION }}
+          key: ${{ runner.os }}-sbt-v${{ env.SBT_VERSION }}
+
+      - name: Install sbt
+        if: steps.cache-sbt.outputs.cache-hit != 'true'
+        run: |
+          wget https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz
+          tar xf sbt-${SBT_VERSION}.tgz
+          mkdir -p tools/sbt
+          mv sbt tools/sbt/v${SBT_VERSION}
+
+  build-test-data:
+    runs-on: ubuntu-latest
+    needs: [install-sbt, install-wla-dx]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache sbt
+        id: cache-sbt
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/sbt/v${{ env.SBT_VERSION }}
+          key: ${{ runner.os }}-sbt-v${{ env.SBT_VERSION }}
+
+      - name: Cache test data
+        id: cache-test-data
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/work/chisel-dmg/chisel-dmg/src/test/resources/cpu/*.gb.hex*
+          key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.s') }}
+
+      - name: Build test data
+        if: steps.cache-test-data.outputs.cache-hit != 'true'
+        run: |
+           export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
+           sbt "convertBin2Hex"
+
+  run-tests:
+    runs-on: ubuntu-latest
+    needs: [install-simulator, build-test-data]
     steps:
       - uses: actions/checkout@v3
       - name: Cache sbt
@@ -125,27 +171,6 @@ jobs:
             ~/tools/ccache/v${{ env.CCACHE_VERSION }}
           key: ${{ runner.os }}-verilator-v${{ env.VERILATOR_VERSION }}
 
-      - name: Install sbt
-        if: steps.cache-sbt.outputs.cache-hit != 'true'
-        run: |
-          wget https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz
-          tar xf sbt-${SBT_VERSION}.tgz
-          mkdir -p tools/sbt
-          mv sbt tools/sbt/v${SBT_VERSION}
-
-      - name: Cache test data
-        id: cache-test-data
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/work/chisel-dmg/chisel-dmg/src/test/resources/cpu/*.gb.hex*
-          key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.s') }}
-
-      - name: Build test data
-        if: steps.cache-test-data.outputs.cache-hit != 'true'
-        run: |
-           export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
-           sbt "convertBin2Hex"
 
       - name: Run test
         run: |
