@@ -3,6 +3,7 @@ name: Chisel-test
 on: [push]
 
 env:
+  HIREDIS_VERSION: 1.2.0
   CCACHE_VERSION: 4.8.2
   VERILATOR_VERSION: 5.002
   SBT_VERSION: 1.9.3
@@ -40,6 +41,29 @@ jobs:
           sudo apt-get update
           sudo apt-get install libhiredis-dev
 
+
+  install-simulator:
+    needs: install-ccache
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Cache hiredis
+        id: cache-hiredis
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/hiredis/v${{ env.HIREDIS_VERSION }}
+          key: ${{ runner.os }}-ccache-v${{ env.HIREDIS_VERSION }}
+
+      - name: Build and Install hiredis
+        if: steps.cache-hiredis.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/redis/hiredis.git
+          cd hiredis
+          git checkout -b v${HIREDIS_VERSION} refs/tags/v${HIREDIS_VERSION}
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/hiredis/v${HIREDIS_VERSION} ..
+          make -j && make install
+          
       - name: Cache ccache
         id: cache-ccache
         uses: actions/cache@v3
@@ -55,18 +79,9 @@ jobs:
           cd ccache
           git checkout -b v${CCACHE_VERSION} refs/tags/v${CCACHE_VERSION}
           mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache/v${CCACHE_VERSION} ..
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache/v${CCACHE_VERSION} -DHIREDIS_INCLUDE_DIR=/home/runner/tools/hiredis/include -DHIREDIS_LIBRARY=/home/runner/tools/hiredis/lib/libhiredis.so ..
           make -j && make install
           export PATH=/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:$PATH
-
-  install-simulator:
-    needs: install-ccache
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install libiredis
-        run: |
-          sudo apt-get update
-          sudo apt-get install libhiredis-dev
 
       - name: Cache verilator
         id: cache-verilator
@@ -163,6 +178,14 @@ jobs:
           path: |
             ~/tools/sbt/v${{ env.SBT_VERSION }}
           key: ${{ runner.os }}-sbt-v${{ env.SBT_VERSION }}
+
+      - name: Cache hiredis
+        id: cache-hiredis
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/hiredis/v${{ env.HIREDIS_VERSION }}
+          key: ${{ runner.os }}-ccache-v${{ env.HIREDIS_VERSION }}
 
       - name: Cache ccache
         id: cache-ccache
