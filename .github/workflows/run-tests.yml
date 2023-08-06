@@ -119,6 +119,16 @@ jobs:
     needs: [install-sbt, install-wla-dx]
     steps:
       - uses: actions/checkout@v3
+
+      - name: Cache WLA DX
+        id: cache-wla-dx
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/wla-dx
+            ~/tools/wla-dx
+          key: ${{ runner.os }}-wla-dx
+                
       - name: Cache sbt
         id: cache-sbt
         uses: actions/cache@v3
@@ -171,6 +181,22 @@ jobs:
             ~/tools/ccache/v${{ env.CCACHE_VERSION }}
           key: ${{ runner.os }}-verilator-v${{ env.VERILATOR_VERSION }}
 
+      - name: Cache test data
+        id: cache-test-data
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/work/chisel-dmg/chisel-dmg/src/test/resources/cpu/*.gb.hex*
+          key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.s') }}
+
+      - name: Cache WLA DX
+        id: cache-wla-dx
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/wla-dx
+            ~/tools/wla-dx
+          key: ${{ runner.os }}-wla-dx
 
       - name: Run test
         run: |
