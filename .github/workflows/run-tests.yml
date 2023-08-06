@@ -3,6 +3,7 @@ name: Chisel-test
 on: [push]
 
 env:
+  HIREDIS_VERSION: 1.2.0
   CCACHE_VERSION: 4.8.2
   VERILATOR_VERSION: 5.002
   SBT_VERSION: 1.9.3
@@ -40,6 +41,29 @@ jobs:
           sudo apt-get update
           sudo apt-get install libhiredis-dev
 
+
+  install-simulator:
+    needs: install-ccache
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Cache hiredis
+        id: cache-hiredis
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/hiredis/v${{ env.HIREDIS_VERSION }}
+          key: ${{ runner.os }}-ccache-v${{ env.HIREDIS_VERSION }}
+
+      - name: Build and Install hiredis
+        if: steps.cache-hiredis.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/redis/hiredis.git
+          cd hiredis
+          git checkout -b v${HIREDIS_VERSION} refs/tags/v${HIREDIS_VERSION}
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/hiredis/v${HIREDIS_VERSION} ..
+          make -j && make install
+          
       - name: Cache ccache
         id: cache-ccache
         uses: actions/cache@v3
@@ -55,18 +79,9 @@ jobs:
           cd ccache
           git checkout -b v${CCACHE_VERSION} refs/tags/v${CCACHE_VERSION}
           mkdir build && cd build
-          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache/v${CCACHE_VERSION} ..
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/home/runner/tools/ccache/v${CCACHE_VERSION} -DHIREDIS_INCLUDE_DIR=/home/runner/tools/hiredis/include -DHIREDIS_LIBRARY=/home/runner/tools/hiredis/lib/libhiredis.so ..
           make -j && make install
           export PATH=/home/runner/tools/ccache/v${CCACHE_VERSION}/bin:$PATH
-
-  install-simulator:
-    needs: install-ccache
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install libiredis
-        run: |
-          sudo apt-get update
-          sudo apt-get install libhiredis-dev
 
       - name: Cache verilator
         id: cache-verilator
@@ -95,9 +110,65 @@ jobs:
           make -j 3
           make install
 
-  build:
+  install-sbt:
     runs-on: ubuntu-latest
-    needs: [install-simulator, install-wla-dx]
+    steps:
+      - name: Cache sbt
+        id: cache-sbt
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/sbt/v${{ env.SBT_VERSION }}
+          key: ${{ runner.os }}-sbt-v${{ env.SBT_VERSION }}
+
+      - name: Install sbt
+        if: steps.cache-sbt.outputs.cache-hit != 'true'
+        run: |
+          wget https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz
+          tar xf sbt-${SBT_VERSION}.tgz
+          mkdir -p tools/sbt
+          mv sbt tools/sbt/v${SBT_VERSION}
+
+  build-test-data:
+    runs-on: ubuntu-latest
+    needs: [install-sbt, install-wla-dx]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Cache WLA DX
+        id: cache-wla-dx
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/wla-dx
+            ~/tools/wla-dx
+          key: ${{ runner.os }}-wla-dx
+                
+      - name: Cache sbt
+        id: cache-sbt
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/sbt/v${{ env.SBT_VERSION }}
+          key: ${{ runner.os }}-sbt-v${{ env.SBT_VERSION }}
+
+      - name: Cache test data
+        id: cache-test-data
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/work/chisel-dmg/chisel-dmg/src/test/resources/cpu/*.gb.hex*
+          key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.s') }}
+
+      - name: Build test data
+        if: steps.cache-test-data.outputs.cache-hit != 'true'
+        run: |
+           export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
+           sbt "convertBin2Hex"
+
+  run-tests:
+    runs-on: ubuntu-latest
+    needs: [install-simulator, build-test-data]
     steps:
       - uses: actions/checkout@v3
       - name: Cache sbt
@@ -107,6 +178,14 @@ jobs:
           path: |
             ~/tools/sbt/v${{ env.SBT_VERSION }}
           key: ${{ runner.os }}-sbt-v${{ env.SBT_VERSION }}
+
+      - name: Cache hiredis
+        id: cache-hiredis
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/tools/hiredis/v${{ env.HIREDIS_VERSION }}
+          key: ${{ runner.os }}-ccache-v${{ env.HIREDIS_VERSION }}
 
       - name: Cache ccache
         id: cache-ccache
@@ -125,14 +204,6 @@ jobs:
             ~/tools/ccache/v${{ env.CCACHE_VERSION }}
           key: ${{ runner.os }}-verilator-v${{ env.VERILATOR_VERSION }}
 
-      - name: Install sbt
-        if: steps.cache-sbt.outputs.cache-hit != 'true'
-        run: |
-          wget https://github.com/sbt/sbt/releases/download/v${SBT_VERSION}/sbt-${SBT_VERSION}.tgz
-          tar xf sbt-${SBT_VERSION}.tgz
-          mkdir -p tools/sbt
-          mv sbt tools/sbt/v${SBT_VERSION}
-
       - name: Cache test data
         id: cache-test-data
         uses: actions/cache@v3
@@ -141,11 +212,14 @@ jobs:
             ~/work/chisel-dmg/chisel-dmg/src/test/resources/cpu/*.gb.hex*
           key: ${{ runner.os }}-sbt-${{ hashFiles('**/*.s') }}
 
-      - name: Build test data
-        if: steps.cache-test-data.outputs.cache-hit != 'true'
-        run: |
-           export PATH=/home/runner/tools/sbt/v${SBT_VERSION}/bin:/home/runner/tools/wla-dx/bin:$PATH
-           sbt "convertBin2Hex"
+      - name: Cache WLA DX
+        id: cache-wla-dx
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/wla-dx
+            ~/tools/wla-dx
+          key: ${{ runner.os }}-wla-dx
 
       - name: Run test
         run: |
